@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.11
-
 import gurobipy as gp
 from gurobipy import GRB
 
@@ -14,6 +12,10 @@ C = np.array([
 
 P_MAX = np.array([
     152,152,350,591,60,155,155,400,400,300,310,350
+])
+
+P_MIN = np.array([
+    30.4,30.4,75,206.85,12,54.25,54.25,100,300,100,108.5,140 
 ])
 
 D = 1775.835
