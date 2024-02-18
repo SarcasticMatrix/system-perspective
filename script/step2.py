@@ -55,13 +55,19 @@ m.optimize()
 p_values = [p[t][i].X for i in range(NbUnit)]
 y_values = [y[t][i].X for i in range(NbUnit)]
 
-# price = [balance_constraint[t].Pi for t in range(NbHour)]
-# profit = [p_values[i]*(price - cost[i]) - SUCost[i] for i in range(NbUnit)]
+
+fixed_model = m.fixed()
+fixed_model.optimize()
+fixed_balance_constraint = [fixed_model.getConstrByName('GenerationBalance_' + str(i+1)) for i in range(NbHour)]
+uniform_price = [fixed_balance_constraint[i].Pi for i in range(NbHour)]
+
+
+profit = [p_values[i]*(uniform_price[i] - cost[i]) - SUCost[i] for i in range(NbUnit)]
 
 #result
 print(f"Optimal objective value: {m.objVal} $")
 for t in range(NbHour):
     for i in range(NbUnit):
         print(f"p_{i+1} for hour {t+1}: production: {p[t][i].X} MW, profit: {profit[i]} $")
-# print("clearing price:", price)
+print("clearing price:", uniform_price)
 
