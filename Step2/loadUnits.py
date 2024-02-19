@@ -1,4 +1,6 @@
 import numpy as np
+import json
+import logging
 
 class LoadUnits:
     def __init__(self):
@@ -31,3 +33,17 @@ class LoadUnits:
         }
 
         self.units.append(load)
+
+    def export_to_json(self):
+        print('Export load units data in a json file ...')
+
+        # Create a json file for data visualisation
+        
+        nbr_units = len(self.units)
+    
+        dictionary = {f"Generation unit {j}": self.units[j] for j in range(nbr_units)}
+        json_object = json.dumps(dictionary, default=lambda x: x.tolist(), indent=4)
+        with open("Step2/data_loadUnits.json", "w") as outfile:
+            outfile.write(json_object)
+
+        print('Export is done ...')

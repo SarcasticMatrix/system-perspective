@@ -60,11 +60,7 @@ for unit_id in range(nbUnits):
         availability=availability[:24]
     )
 
-# We create a json file for data visualisation
-dictionary = {f"Generation unit {j}": generation_units.units[j] for j in range(12+6)}
-json_object = json.dumps(dictionary, default=lambda x: x.tolist(), indent=4)
-with open("generation units data.json", "w") as outfile:
-    outfile.write(json_object)
+generation_units.export_to_json()
 
 ################################################################################
 # Creation of Loads Units
@@ -90,8 +86,4 @@ for unit_id in range(nbLoadUnits):
         total_needed_demand=total_needed_demand
     )
 
-# We create a json file for data visualisation
-dictionary = {f"Generation unit {j}": load_units.units[j] for j in range(nbLoadUnits)}
-json_object = json.dumps(dictionary, default=lambda x: x.tolist(), indent=4)
-with open("load units data.json", "w") as outfile:
-    outfile.write(json_object)
+load_units.export_to_json()
