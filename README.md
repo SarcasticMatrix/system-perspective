@@ -3,9 +3,9 @@
 
 ### GenerationUnits Class
 
-The `GenerationUnits` class is designed to represent a collection of power generation units (conventional units **AND** wind turbines). This class provides a convenient way to add and store information about individual generation units.
+The `GenerationUnits` class is designed to represent a collection of power generation units (conventional units **AND** wind turbines). This class provides a convenient way to add and store information about individual generation units. 
 
-Parameters:
+This object is a `list` of `dict`. Each dictionnary has the following parameters:
 - `unit_id`: Unique identifier for the unit (`int`).
 - `node_id`: Identifier for the node to which the unit is connected (`int`).
 - `unit_type`: Type of the unit (`str`) *wind turbine* or *conventionnal*. 
@@ -17,9 +17,9 @@ Parameters:
 You can export the generation units data with the methods `export_to_json`
 
 ### LoadUnits Class
-The LoadUnits class represents a collection of load units in an electricity market. This class provides a convenient way to add and store information about individual load units.
+The LoadUnits class represents a collection of load units in an electricity market. This class provides a convenient way to add and store information about individual load units. This object is a `list` of `dict`. 
 
-Parameters:
+Each dictionnary has the following parameters:
 - `load_id`: Unique identifier for the load unit (`int`).
 - `node_id`: Identifier for the node where the load unit is located (`int`).
 - `bid_price`: Bid price for the load unit (`float`). To be fixed.
