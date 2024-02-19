@@ -15,6 +15,7 @@ Parameters:
 - `availability`: List representing the availability schedule of the unit (`list`). 
 
 ### LoadUnits Class
+The LoadUnits class represents a collection of load units in an electricity market. This class provides a convenient way to add and store information about individual load units.
 
 Parameters:
 - `load_id`: Unique identifier for the load unit (`int`).
