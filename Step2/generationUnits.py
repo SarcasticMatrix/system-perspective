@@ -1,19 +1,20 @@
 import json
 
+
 class GenerationUnits:
     def __init__(self):
         self.units = []
 
     def add_unit(
-            self,
-            unit_id: int, 
-            node_id: int, 
-            unit_type: str, 
-            cost: float, 
-            pmax: float, 
-            pmin: float, 
-            availability: list
-        ):
+        self,
+        unit_id: int,
+        node_id: int,
+        unit_type: str,
+        cost: float,
+        pmax: float,
+        pmin: float,
+        availability: list,
+    ):
 
         unit = {
             "Id": unit_id,
@@ -23,24 +24,25 @@ class GenerationUnits:
             "PMAX": pmax,
             "PMIN": pmin,
             "Availability": availability,
-            #"Production":
+            # "Production":
         }
 
         self.units.append(unit)
 
     def export_to_json(self):
-        print('Export generation units data in a json file ...')
+        print("Export generation units data in a json file ...")
 
         # Create a json file for data visualisation
-        
-        nbr_units = len(self.units) 
+
+        nbr_units = len(self.units)
 
         dictionary = {f"Generation unit {j}": self.units[j] for j in range(nbr_units)}
         json_object = json.dumps(dictionary, default=lambda x: x.tolist(), indent=4)
         with open("Step2/data_generationUnits.json", "w") as outfile:
             outfile.write(json_object)
-        
-        print('Export is done ...')
+
+        print("Export is done ...")
+
 
 # # Exemple d'utilisation
 # generation_units = GenerationUnits()
@@ -50,4 +52,3 @@ class GenerationUnits:
 
 # for unit in generation_units.units:
 #     print(unit)
-
