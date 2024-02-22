@@ -1,7 +1,7 @@
 # Structure of the data
 
 ### Nice coding habits 
-Before commits and pushes, you should call the `black` package on your file `python -m black {path_to_your_file}`.
+Before committing and pushing codes, you should call the `black` package on your file `python -m black {path_to_your_file}`.
 
 ### GenerationUnits Class
 
