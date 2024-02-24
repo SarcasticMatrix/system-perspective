@@ -30,8 +30,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 120,
+        "Ramp down": 120,
+        "Initial production": 76
     },
     "Generation unit 1": {
         "Id": 1,
@@ -64,8 +67,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 120,
+        "Ramp down": 120,
+        "Initial production": 76
     },
     "Generation unit 2": {
         "Id": 2,
@@ -98,8 +104,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 350,
+        "Ramp down": 350,
+        "Initial production": 0
     },
     "Generation unit 3": {
         "Id": 3,
@@ -132,8 +141,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 240,
+        "Ramp down": 240,
+        "Initial production": 0
     },
     "Generation unit 4": {
         "Id": 4,
@@ -166,8 +178,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 60,
+        "Ramp down": 60,
+        "Initial production": 0
     },
     "Generation unit 5": {
         "Id": 5,
@@ -200,8 +215,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 155,
+        "Ramp down": 155,
+        "Initial production": 0
     },
     "Generation unit 6": {
         "Id": 6,
@@ -234,8 +252,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 155,
+        "Ramp down": 155,
+        "Initial production": 124
     },
     "Generation unit 7": {
         "Id": 7,
@@ -268,8 +289,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 280,
+        "Ramp down": 280,
+        "Initial production": 240
     },
     "Generation unit 8": {
         "Id": 8,
@@ -302,8 +326,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 280,
+        "Ramp down": 280,
+        "Initial production": 240
     },
     "Generation unit 9": {
         "Id": 9,
@@ -336,8 +363,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 300,
+        "Ramp down": 300,
+        "Initial production": 240
     },
     "Generation unit 10": {
         "Id": 10,
@@ -370,8 +400,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 180,
+        "Ramp down": 180,
+        "Initial production": 248
     },
     "Generation unit 11": {
         "Id": 11,
@@ -404,8 +437,11 @@
             1,
             1,
             1,
-            1,
+            1
         ],
+        "Ramp up": 240,
+        "Ramp down": 240,
+        "Initial production": 280
     },
     "Generation unit 12": {
         "Id": 0,
@@ -438,8 +474,11 @@
             0.740253408194427,
             0.744315024615614,
             0.781831216751717,
-            0.700243512779838,
+            0.700243512779838
         ],
+        "Ramp up": 10000,
+        "Ramp down": 0,
+        "Initial production": 0
     },
     "Generation unit 13": {
         "Id": 1,
@@ -472,8 +511,11 @@
             0.736487840564778,
             0.631564115077659,
             0.624393969124891,
-            0.689311008256275,
+            0.689311008256275
         ],
+        "Ramp up": 10000,
+        "Ramp down": 0,
+        "Initial production": 0
     },
     "Generation unit 14": {
         "Id": 2,
@@ -506,8 +548,11 @@
             0.824356631287494,
             0.782885432728708,
             0.815080918457579,
-            0.75197694599735,
+            0.75197694599735
         ],
+        "Ramp up": 10000,
+        "Ramp down": 0,
+        "Initial production": 0
     },
     "Generation unit 15": {
         "Id": 3,
@@ -540,8 +585,11 @@
             0.835111761001025,
             0.825193141814975,
             0.821347810888441,
-            0.772766234701015,
+            0.772766234701015
         ],
+        "Ramp up": 10000,
+        "Ramp down": 0,
+        "Initial production": 0
     },
     "Generation unit 16": {
         "Id": 4,
@@ -574,8 +622,11 @@
             0.722334492729121,
             0.729682657139692,
             0.736505360376093,
-            0.709171718442199,
+            0.709171718442199
         ],
+        "Ramp up": 10000,
+        "Ramp down": 0,
+        "Initial production": 0
     },
     "Generation unit 17": {
         "Id": 5,
@@ -608,7 +659,10 @@
             0.723925242117204,
             0.717148527820169,
             0.669553674275861,
-            0.567822172588683,
+            0.567822172588683
         ],
-    },
+        "Ramp up": 10000,
+        "Ramp down": 0,
+        "Initial production": 0
+    }
 }

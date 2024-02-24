@@ -1,8 +1,11 @@
 import pandas as pd
 import gurobipy as gp
+import numpy as np
 from gurobipy import GRB
 
 import json
+
+# cd C:\Users\julia\OneDrive\DTU\course\S2\46755 - Renewables in Electricity Markets\Assignment1 - git
 
 ################################################################################
 # Creation of Conventionnal Generation Units
@@ -17,8 +20,11 @@ nodes = generationUnits_parameters["Node"].values
 costs = generationUnits_parameters["Ci"].values
 pmax = generationUnits_parameters["Pmax"].values
 pmin = generationUnits_parameters["Pmin"].values
-Csu = generationUnits_parameters["Csu"].values
-Uini = generationUnits_parameters["Uini"].values
+Csu = generationUnits_parameters["Csu"].values          #Start-up cost
+Uini = generationUnits_parameters["Uini"].values        #Initial state (1 if on, 0 else)
+ramp_up = generationUnits_parameters["RU"].values       #Maximum augmentation of production (ramp-up)
+ramp_down = generationUnits_parameters["RD"].values     #Maximum decrease of production (ramp-up)
+prod_init = generationUnits_parameters["Pini"].values   #Initial production
 
 generation_units = GenerationUnits()
 nbUnitsConventionnal = generationUnits_parameters.shape[0]
@@ -31,6 +37,9 @@ for unit_id in range(nbUnitsConventionnal):
         pmax=pmax[unit_id],
         pmin=pmin[unit_id],
         availability=[1] * 24,
+        ramp_up=ramp_up[unit_id],
+        ramp_down=ramp_down[unit_id],
+        prod_init=prod_init[unit_id],
     )
 
 ################################################################################
@@ -61,6 +70,9 @@ for unit_id in range(nbUnitsWind):
         pmax=pmax[unit_id],
         pmin=pmin[unit_id],
         availability=availability[:24],
+        ramp_up=10000, #big M, for no constraint on rampu_up
+        ramp_down=0,
+        prod_init=0,
     )
 
 generation_units.export_to_json()
@@ -147,6 +159,36 @@ balance_constraint = [
     )
     for t in range(nbHour)
 ]
+ramp_up_constraint = []
+ramp_down_constraint = []
+for g in range(nbUnits):
+    for t in range(nbHour):
+        if t == 0: # Apply the special condition for t=0
+            ramp_up_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    <= generation_units.units[g]["Initial production"] + generation_units.units[g]["Ramp up"],
+                )
+            )
+            ramp_down_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    >= generation_units.units[g]["Initial production"] - generation_units.units[g]["Ramp down"],
+                )
+            )
+        else: # Apply the regular ramp-down constraint for t>0
+            ramp_up_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    <= production[t-1, g] + generation_units.units[g]["Ramp up"],
+                )
+            )
+            ramp_down_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    >= production[t-1, g] - generation_units.units[g]["Ramp down"],
+                )
+            )
 
 # Solve it!
 m.optimize()
@@ -156,24 +198,29 @@ m.optimize()
 # Result
 ################################################################################
 
-production_values = [production[t].X for t in range(nbHour)]
-demand_supplied_values = [demand_supplied[l].X for l in range(nbLoadUnits)]
+clearing_price = [balance_constraint[t].Pi for t in range(nbHour)]
+clearing_price_values = [price_item.flatten()[0] for price_item in clearing_price] #remove the array values
 
-price = [balance_constraint[t].Pi for t in range(nbHour)]
 profit = [
     [
-        production[t][g].X * (price[t] - generation_units.units[g]["Cost"])
+        production[t][g].X * (clearing_price[t] - generation_units.units[g]["Cost"])
         for g in range(nbUnits)
     ]
     for t in range(nbHour)
 ]
 
-# result
+demand_unsatisfied = [
+    total_needed_demand[t] - np.sum(demand_supplied[t][l].X for l in range(nbLoadUnits)) for t in range(nbHour)
+]
+
+# print result
 print(f"Optimal objective value: {m.objVal} $")
 for t in range(nbHour):
     for g in range(nbUnits):
         print(
             f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
         )
-print("clearing price:", price)
-# modify the price print to remove the "array()"
+    print(f"clearing price for hour {t+1}:", clearing_price_values[t])
+print("clearing price:", clearing_price_values)
+print("demand unsatisfied:", demand_unsatisfied)
+

@@ -2,7 +2,7 @@
     "Generation unit 0": {
         "Id": 0,
         "Id node": 1,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 3.8,
         "Needed demand": [
             67.48173,
@@ -28,13 +28,13 @@
             91.65429,
             83.59676999999999,
             73.52487,
-            63.45296999999999,
-        ],
+            63.45296999999999
+        ]
     },
     "Generation unit 1": {
         "Id": 1,
         "Id node": 2,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 3.4,
         "Needed demand": [
             60.378389999999996,
@@ -60,13 +60,13 @@
             82.00647,
             74.79710999999999,
             65.78541,
-            56.77371,
-        ],
+            56.77371
+        ]
     },
     "Generation unit 2": {
         "Id": 2,
         "Id node": 3,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 6.3,
         "Needed demand": [
             111.877605,
@@ -92,13 +92,13 @@
             151.95316499999998,
             138.594645,
             121.896495,
-            105.198345,
-        ],
+            105.198345
+        ]
     },
     "Generation unit 3": {
         "Id": 3,
         "Id node": 4,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 2.6,
         "Needed demand": [
             46.171710000000004,
@@ -124,13 +124,13 @@
             62.710829999999994,
             57.197790000000005,
             50.306490000000004,
-            43.41519,
-        ],
+            43.41519
+        ]
     },
     "Generation unit 4": {
         "Id": 4,
         "Id node": 5,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 2.5,
         "Needed demand": [
             44.395875,
@@ -156,13 +156,13 @@
             60.298874999999995,
             54.997875,
             48.371625,
-            41.745375,
-        ],
+            41.745375
+        ]
     },
     "Generation unit 5": {
         "Id": 5,
         "Id node": 6,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 4.8,
         "Needed demand": [
             85.24007999999999,
@@ -188,13 +188,13 @@
             115.77384,
             105.59591999999999,
             92.87351999999998,
-            80.15112,
-        ],
+            80.15112
+        ]
     },
     "Generation unit 6": {
         "Id": 6,
         "Id node": 7,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 4.4,
         "Needed demand": [
             78.13674,
@@ -220,13 +220,13 @@
             106.12602000000001,
             96.79626,
             85.13406,
-            73.47186,
-        ],
+            73.47186
+        ]
     },
     "Generation unit 7": {
         "Id": 7,
         "Id node": 8,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 6.0,
         "Needed demand": [
             106.5501,
@@ -252,13 +252,13 @@
             144.7173,
             131.9949,
             116.09190000000001,
-            100.18889999999999,
-        ],
+            100.18889999999999
+        ]
     },
     "Generation unit 8": {
         "Id": 8,
         "Id node": 9,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 6.1,
         "Needed demand": [
             108.32593499999999,
@@ -284,13 +284,13 @@
             147.129255,
             134.194815,
             118.026765,
-            101.85871499999999,
-        ],
+            101.85871499999999
+        ]
     },
     "Generation unit 9": {
         "Id": 9,
         "Id node": 10,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 6.8,
         "Needed demand": [
             120.75677999999999,
@@ -316,13 +316,13 @@
             164.01294,
             149.59421999999998,
             131.57082,
-            113.54742,
-        ],
+            113.54742
+        ]
     },
     "Generation unit 10": {
         "Id": 10,
         "Id node": 13,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 9.3,
         "Needed demand": [
             165.152655,
@@ -348,13 +348,13 @@
             224.31181500000002,
             204.592095,
             179.94244500000002,
-            155.292795,
-        ],
+            155.292795
+        ]
     },
     "Generation unit 11": {
         "Id": 11,
         "Id node": 14,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 6.8,
         "Needed demand": [
             120.75677999999999,
@@ -380,13 +380,13 @@
             164.01294,
             149.59421999999998,
             131.57082,
-            113.54742,
-        ],
+            113.54742
+        ]
     },
     "Generation unit 12": {
         "Id": 12,
         "Id node": 15,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 11.1,
         "Needed demand": [
             197.117685,
@@ -412,13 +412,13 @@
             267.72700499999996,
             244.190565,
             214.77001499999997,
-            185.34946499999998,
-        ],
+            185.34946499999998
+        ]
     },
     "Generation unit 13": {
         "Id": 13,
         "Id node": 16,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 3.5,
         "Needed demand": [
             62.154225000000004,
@@ -444,13 +444,13 @@
             84.41842499999998,
             76.997025,
             67.720275,
-            58.443525,
-        ],
+            58.443525
+        ]
     },
     "Generation unit 14": {
         "Id": 14,
         "Id node": 18,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 11.7,
         "Needed demand": [
             207.772695,
@@ -476,13 +476,13 @@
             282.198735,
             257.390055,
             226.379205,
-            195.368355,
-        ],
+            195.368355
+        ]
     },
     "Generation unit 15": {
         "Id": 15,
         "Id node": 19,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 6.4,
         "Needed demand": [
             113.65344,
@@ -508,13 +508,13 @@
             154.36512000000002,
             140.79456,
             123.83136,
-            106.86816,
-        ],
+            106.86816
+        ]
     },
     "Generation unit 16": {
         "Id": 16,
         "Id node": 20,
-        "Bid price": 50,
+        "Bid price": 500,
         "Load percentage": 4.5,
         "Needed demand": [
             79.912575,
@@ -540,7 +540,7 @@
             108.537975,
             98.99617500000001,
             87.068925,
-            75.141675,
-        ],
-    },
+            75.141675
+        ]
+    }
 }
