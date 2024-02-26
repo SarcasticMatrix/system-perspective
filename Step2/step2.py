@@ -11,7 +11,7 @@ from gurobipy import GRB
 
 from generationUnits import GenerationUnits
 
-# parameter unit
+# Parameter units
 generationUnits_parameters = pd.read_csv("inputs/gen_parameters.csv", sep=";")
 
 nodes = generationUnits_parameters["Node"].values
@@ -221,9 +221,7 @@ actualise_SoC = [
 m.addConstr(state_of_charge[0] == state_of_charge[-1])
 m.addConstr(state_of_charge[0] == value_beginning_and_end)
 
-# Solve it!
 m.optimize()
-
 
 ################################################################################
 # Results
