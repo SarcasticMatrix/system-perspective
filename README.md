@@ -15,6 +15,9 @@ This object is a `list` of `dict`. Each dictionnary has the following parameters
 - `pmax`: Maximum power output of the unit (`float`).
 - `pmin`: Minimum power output of the unit (`float`).
 - `availability`: List representing the availability schedule of the unit (`list`). 
+- `Ramp up`: Ramp up of the unit (`float`).
+- `Ramp down`: Ramp down of the unit (`float`).
+- `Initial production`: Initital production of the unit (`float`).
 
 You can export the generation units data with the methods `export_to_json`
 
