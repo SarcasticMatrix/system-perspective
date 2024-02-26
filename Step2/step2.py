@@ -223,4 +223,3 @@ for t in range(nbHour):
     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
 print("clearing price:", clearing_price_values)
 print("demand unsatisfied:", demand_unsatisfied)
-
