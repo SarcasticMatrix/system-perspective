@@ -137,6 +137,7 @@ m.setObjective(objective, GRB.MAXIMIZE)
 
 # Constraints
 
+# generation unitsPhave a _max 
 max_prod_constraint = [
     m.addConstr(
         production[t, g]
@@ -146,11 +147,15 @@ max_prod_constraint = [
     for g in range(nbUnits)
     for t in range(nbHour)
 ]
+
+# Cannot supply more than necessary
 demand_supplied_constraint = [
-    m.addConstr(demand_supplied[t, l] <= load_units.units[l]["Needed demand"])
+    m.addConstr(demand_supplied[t, l] <= load_units.units[l]["Needed demand"][t])
     for l in range(nbLoadUnits)
     for t in range(nbHour)
 ]
+
+# Supplied demand match generation
 balance_constraint = [
     m.addConstr(
         sum(demand_supplied[t, l] for l in range(nbLoadUnits))
@@ -160,6 +165,8 @@ balance_constraint = [
     )
     for t in range(nbHour)
 ]
+
+# Ramp-up and ramp-down constraint
 ramp_up_constraint = []
 ramp_down_constraint = []
 for g in range(nbUnits):
@@ -191,12 +198,15 @@ for g in range(nbUnits):
                 )
             )
 
+# Battery constraints
+
+
 # Solve it!
 m.optimize()
 
 
 ################################################################################
-# Result
+# Results
 ################################################################################
 
 clearing_price = [balance_constraint[t].Pi for t in range(nbHour)]
