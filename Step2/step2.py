@@ -243,22 +243,27 @@ demand_unsatisfied = [
 ]
 
 # print result
-print(f"Optimal objective value: {m.objVal} $")
-for t in range(nbHour):
-    for g in range(nbUnits):
-        print(
-            f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
-        )
-    print(f"clearing price for hour {t+1}:", clearing_price_values[t])
-print("clearing price:", clearing_price_values)
-print("demand unsatisfied:", demand_unsatisfied)
-print("SoC:", state_of_charge.X)
-
+# print(f"Optimal objective value: {m.objVal} $")
+# for t in range(nbHour):
+#     for g in range(nbUnits):
+#         print(
+#             f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
+#         )
+#     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
+# print("clearing price:", clearing_price_values)
+# print("demand unsatisfied:", demand_unsatisfied)
+# print("SoC:", state_of_charge.X)
 
 results = pd.DataFrame()
 results['Hour'] = np.arange(nbHour)
-for g in range(nbLoadUnits):
+for g in range(nbUnits):
     results[f"PU production {g+1} (MW)"] =  [production[t][g].X for t in range(nbHour)]
     results[f"PU profit {g+1} ($)"] =  [profit[t][g] for t in range(nbHour)]
 results["Clearing price"] = clearing_price_values
+results["Demand"] = total_needed_demand
+results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
 results["Demand unsatisfied"] = demand_unsatisfied
+results["Battery production"] = power_injected_drawn.X
+
+from plot_results import plot_results
+plot_results(nbUnits=nbUnits,results=results)
