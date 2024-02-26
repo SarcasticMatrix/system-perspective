@@ -3,8 +3,6 @@ import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
 
-import json
-
 # cd C:\Users\julia\OneDrive\DTU\course\S2\46755 - Renewables in Electricity Markets\Assignment1 - git
 
 ################################################################################
@@ -110,6 +108,16 @@ load_units.export_to_json()
 
 
 ################################################################################
+# Adding of the battery
+################################################################################
+efficiency = np.sqrt(0.937)
+min_SoC = 0 #minimum of state of charge
+max_SoC = 600 #MWh maximum of state of charge = battery capacity
+value_beginning_and_end = max_SoC/2
+P_max = 150 #MW
+delta_t= 1 #hour
+
+################################################################################
 # Model
 ################################################################################
 
@@ -121,6 +129,12 @@ production = m.addMVar(
 )
 demand_supplied = m.addMVar(
     shape=(nbHour, nbLoadUnits), lb=0, name=f"demand_supplied", vtype=GRB.CONTINUOUS
+)
+state_of_charge = m.addMVar(
+    shape=(nbHour,), lb=min_SoC, ub=max_SoC, name=f"state_of_charge", vtype=GRB.CONTINUOUS
+)
+power_injected_drawn = m.addMVar(
+    shape=(nbHour,), lb=-P_max, ub=P_max, name=f"power_injected_or_drawn", vtype=GRB.CONTINUOUS
 )
 
 # Objective function
@@ -159,7 +173,8 @@ demand_supplied_constraint = [
 balance_constraint = [
     m.addConstr(
         sum(demand_supplied[t, l] for l in range(nbLoadUnits))
-        - gp.quicksum(production[t, g] for g in range(nbUnits))
+        - gp.quicksum(production[t, g] for g in range(nbUnits)) 
+        + power_injected_drawn[t]
         == 0,
         name=f"GenerationBalance_{t+1}",
     )
@@ -199,7 +214,12 @@ for g in range(nbUnits):
             )
 
 # Battery constraints
-
+actualise_SoC = [
+    m.addConstr(state_of_charge[t+1] == state_of_charge[t] + power_injected_drawn[t]*efficiency*delta_t)
+    for t in range(nbHour-1)
+]
+m.addConstr(state_of_charge[0] == state_of_charge[-1])
+m.addConstr(state_of_charge[0] == value_beginning_and_end)
 
 # Solve it!
 m.optimize()
@@ -234,3 +254,13 @@ for t in range(nbHour):
     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
 print("clearing price:", clearing_price_values)
 print("demand unsatisfied:", demand_unsatisfied)
+print("SoC:", state_of_charge.X)
+
+
+results = pd.DataFrame()
+results['Hour'] = np.arange(nbHour)
+for g in range(nbLoadUnits):
+    results[f"PU production {g+1} (MW)"] =  [production[t][g].X for t in range(nbHour)]
+    results[f"PU profit {g+1} ($)"] =  [profit[t][g] for t in range(nbHour)]
+results["Clearing price"] = clearing_price_values
+results["Demand unsatisfied"] = demand_unsatisfied
