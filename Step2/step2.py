@@ -20,11 +20,11 @@ nodes = generationUnits_parameters["Node"].values
 costs = generationUnits_parameters["Ci"].values
 pmax = generationUnits_parameters["Pmax"].values
 pmin = generationUnits_parameters["Pmin"].values
-Csu = generationUnits_parameters["Csu"].values          #Start-up cost
-Uini = generationUnits_parameters["Uini"].values        #Initial state (1 if on, 0 else)
-ramp_up = generationUnits_parameters["RU"].values       #Maximum augmentation of production (ramp-up)
-ramp_down = generationUnits_parameters["RD"].values     #Maximum decrease of production (ramp-up)
-prod_init = generationUnits_parameters["Pini"].values   #Initial production
+Csu = generationUnits_parameters["Csu"].values          # Start-up cost
+Uini = generationUnits_parameters["Uini"].values        # Initial state (1 if on, 0 else)
+ramp_up = generationUnits_parameters["RU"].values       # Maximum augmentation of production (ramp-up)
+ramp_down = generationUnits_parameters["RD"].values     # Maximum decrease of production (ramp-up)
+prod_init = generationUnits_parameters["Pini"].values   # Initial production
 
 generation_units = GenerationUnits()
 nbUnitsConventionnal = generationUnits_parameters.shape[0]
@@ -136,6 +136,7 @@ objective = gp.quicksum(
 m.setObjective(objective, GRB.MAXIMIZE)
 
 # Constraints
+
 max_prod_constraint = [
     m.addConstr(
         production[t, g]
