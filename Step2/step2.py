@@ -257,7 +257,7 @@ demand_unsatisfied = [
 results = pd.DataFrame()
 results['Hour'] = np.arange(nbHour)
 for g in range(nbUnits):
-    results[f"PU production {g+1} (MW)"] =  [production[t][g].X for t in range(nbHour)]
+    results[f"PU production {g+1} (GW)"] =  [production[t][g].X for t in range(nbHour)]
     results[f"PU profit {g+1} ($)"] =  [profit[t][g] for t in range(nbHour)]
 results["Clearing price"] = clearing_price_values
 results["Demand"] = total_needed_demand
@@ -265,6 +265,7 @@ results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
 results["Demand unsatisfied"] = demand_unsatisfied
 results["Battery production"] = power_injected_drawn.X
 results["State of charge"] = state_of_charge.X/max_SoC
+results["Battery profit"] = results["Clearing price"]*results["Battery production"]
 
 from plot_results import plot_results
 plot_results(nbUnits=nbUnits,results=results)
