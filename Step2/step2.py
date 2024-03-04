@@ -264,6 +264,7 @@ results["Demand"] = total_needed_demand
 results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
 results["Demand unsatisfied"] = demand_unsatisfied
 results["Battery production"] = power_injected_drawn.X
+results["State of charge"] = state_of_charge.X/max_SoC
 
 from plot_results import plot_results
 plot_results(nbUnits=nbUnits,results=results)
