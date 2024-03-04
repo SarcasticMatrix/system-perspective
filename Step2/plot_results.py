@@ -12,7 +12,7 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
 
     # axs[0] variables
     state_of_charge = results["State of charge"].values.tolist()
-    axs[0].step(hours, state_of_charge + [state_of_charge[-1]], where='post', linewidth=0.8, color='gray', label="State of charge of the battery")
+    axs[0].step(hours, state_of_charge + [state_of_charge[-1]], where='post', linewidth=0.8, color='gray', label="SoC of the battery")
     axs[0].set_ylabel("%")
     axs[0].legend(loc='upper left')
     axs[0].xaxis.grid(which='minor', linestyle='--', linewidth=0.1, color='gray')
