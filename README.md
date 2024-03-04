@@ -31,4 +31,4 @@ Each dictionnary has the following parameters:
 - `load_percentage`: Percentage of the total load (`float`), e.g. $3.8$.
 - `needed_demand`: Array of shape `(24,)` representing the asked demand of the load unit (in MW) for each hour of the day. Is calculated as `total_needed_demand * load_percentage/100`.
 
-You can export the load units data with the methods `export_to_json`
+You can export the load units data with the methods `export_to_json`.
