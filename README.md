@@ -1,10 +1,10 @@
 # Structure of the data
 
-Before committing and pushing codes, you should call the `black` package on your file: `python -m black {path_to_your_file}`.
+Before committing and pushing codes, you should call the `black` package on your file: `python -m black <path_to_your_file>`.
 
 
 ## Nodes class
-**Overview:** The Nodes class represents nodes in a system, where each node is a dictionary with specific attributes such as id, generation units, load units, and transmission lines.
+**Overview:** The Nodes class represents nodes in a system (`list` of node), where each node is a dictionary with specific attributes such as id, generation units, load units, and transmission lines.
 
 **Attributes**:
 - `id` (`int`): The unique identifier for the node.
@@ -16,7 +16,7 @@ Before committing and pushing codes, you should call the `black` package on your
 - `add_node(id: int, generationUnits: GenerationUnits, loadUnits: LoadUnits, transmissionLines: list)`: Adds a new node to the system with the specified attributes.
 
 ## GenerationUnits Class
-**Overview:** The GenerationUnits class represents generation units in the system. Each generation unit is defined by attributes such as id, node id, unit type, cost, maximum and minimum power, availability, ramp up, ramp down, and initial production.
+**Overview:** The GenerationUnits class represents generation units in the system (`list` of generation unit). Each generation unit is defined by attributes such as id, node id, unit type, cost, maximum and minimum power, availability, ramp up, ramp down, and initial production.
 
 **Attributes**
 - `unit_id` (`int`): The unique identifier for the generation unit.
@@ -36,7 +36,7 @@ Before committing and pushing codes, you should call the `black` package on your
 - `export_to_json()`: Exports generation units data to a JSON file for data visualization.
 
 ## LoadUnits Class
-**Overview:** The LoadUnits class represents load units in the system. Each load unit is defined by attributes such as id, node id, bid price, load percentage, and needed demand over 24 hours.
+**Overview:** The LoadUnits class represents load units in the system (`list` of load unit). Each load unit is defined by attributes such as id, node id, bid price, load percentage, and needed demand over 24 hours.
 
 **Attributes**
 - `load_id` (`int`): The unique identifier for the load unit.
