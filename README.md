@@ -1,34 +1,63 @@
 # Structure of the data
 
-### Nice coding habits 
 Before committing and pushing codes, you should call the `black` package on your file: `python -m black {path_to_your_file}`.
 
-### GenerationUnits Class
 
-The `GenerationUnits` class is designed to represent a collection of power generation units (conventional units **AND** wind turbines). This class provides a convenient way to add and store information about individual generation units. 
+## Nodes class
+**Overview:** The Nodes class represents nodes in a system, where each node is a dictionary with specific attributes such as id, generation units, load units, and transmission lines.
 
-This object is a `list` of `dict`. Each dictionnary has the following parameters:
-- `unit_id`: Unique identifier for the unit (`int`).
-- `node_id`: Identifier for the node to which the unit is connected (`int`).
-- `unit_type`: Type of the unit (`str`) *wind turbine* or *conventionnal*. 
-- `cost`: Cost of production for the unit (`float`).
-- `pmax`: Maximum power output of the unit (`float`).
-- `pmin`: Minimum power output of the unit (`float`).
-- `availability`: List representing the availability schedule of the unit (`list`). 
-- `Ramp up`: Ramp up of the unit (`float`).
-- `Ramp down`: Ramp down of the unit (`float`).
-- `Initial production`: Initital production of the unit (`float`).
+**Attributes**:
+- `id` (`int`): The unique identifier for the node.
+- `generationUnits` (`GenerationUnits`): All the generation units located at this node.
+- `loadUnits` (`LoadUnits`): All the load units located at this node.
+- `transmissionLines` (`list` of `TransmissionLine`): All the transmission lines located at this node.
 
-You can export the generation units data with the methods `export_to_json`
+**Methods**
+- `add_node(id: int, generationUnits: GenerationUnits, loadUnits: LoadUnits, transmissionLines: list)`: Adds a new node to the system with the specified attributes.
 
-### LoadUnits Class
-The LoadUnits class represents a collection of load units in an electricity market. This class provides a convenient way to add and store information about individual load units. This object is a `list` of `dict`. 
+## GenerationUnits Class
+**Overview:** The GenerationUnits class represents generation units in the system. Each generation unit is defined by attributes such as id, node id, unit type, cost, maximum and minimum power, availability, ramp up, ramp down, and initial production.
 
-Each dictionnary has the following parameters:
-- `load_id`: Unique identifier for the load unit (`int`).
-- `node_id`: Identifier for the node where the load unit is located (`int`).
-- `bid_price`: Bid price for the load unit (`float`). To be fixed.
-- `load_percentage`: Percentage of the total load (`float`), e.g. $3.8$.
-- `needed_demand`: Array of shape `(24,)` representing the asked demand of the load unit (in MW) for each hour of the day. Is calculated as `total_needed_demand * load_percentage/100`.
+**Attributes**
+- `unit_id` (`int`): The unique identifier for the generation unit.
+- `node_id` (`int`): The id of the node where the generation unit is located.
+- `unit_type` (`str`): The type of the generation unit.
+- `cost` (`float`): The cost of the generation unit.
+- `pmax` (`float`): The maximum power output of the generation unit.
+- `pmin` (`float`): The minimum power output of the generation unit.
+- `availability` (`list`): The availability of the generation unit.
+- `ramp_up` (`float`): The ramp-up rate of the generation unit.
+- `ramp_down` (`float`): The ramp-down rate of the generation unit.
+- `prod_init` (`float`): The initial production of the generation unit.
 
-You can export the load units data with the methods `export_to_json`.
+**Methods**
+- `add_unit(unit_id: int, node_id: int, unit_type: str, cost: float, pmax: float, pmin: float, availability: list, ramp_up: float, ramp_down: float, prod_init: float)`: Adds a new generation unit to the system with the specified attributes.
+- `add_constructed_unit(unit: dict)`: Adds a generation unit already defined in another GenerationUnits instance.
+- `export_to_json()`: Exports generation units data to a JSON file for data visualization.
+
+## LoadUnits Class
+**Overview:** The LoadUnits class represents load units in the system. Each load unit is defined by attributes such as id, node id, bid price, load percentage, and needed demand over 24 hours.
+
+**Attributes**
+- `load_id` (`int`): The unique identifier for the load unit.
+- `node_id` (`int`): The id of the node where the load unit is located.
+- `bid_price` (`float`): The bid price to be fixed for the load unit.
+- `load_percentage` (`float`): The percentage of the load unit.
+- `total_needed_demand` (`np.array`): An array of shape (24,) with the system demand of the unit load (in MW).
+
+**Methods**
+- `add_unit(load_id: int, node_id: int, bid_price: float, load_percentage: float, total_needed_demand: np.array)`: Adds a new load unit to the system with the specified attributes.
+- `add_constructed_unit(unit: dict)`: Adds a load unit already defined in another LoadUnits instance.
+- `export_to_json()`: Exports load units data to a JSON file for data visualization.
+
+## Transmission Class
+**Overview:** The TransmissionLine class represents a transmission line between two nodes. It includes attributes such as from_node, to_node, susceptance, and capacity.
+
+**Attributes**
+- `from_node` (`int`): The id of the first node (where the transmission line originates).
+- `to_node` (`int`): The id of the second node (where the transmission line terminates).
+- `susceptance` (`float`): The susceptance of the transmission line.
+- `capacity` (`float`): The capacity of the transmission line.
+
+**Methods**
+- `__init__(from_node: int, to_node: int, susceptance: float, capacity: float): Initializes a new TransmissionLine instance.`
