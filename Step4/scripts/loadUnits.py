@@ -1,6 +1,5 @@
 import numpy as np
 import json
-import logging
 
 
 class LoadUnits:
@@ -34,6 +33,12 @@ class LoadUnits:
         }
 
         self.units.append(load)
+    
+    def add_constructed_unit(self, unit: dict):
+        """
+        Add a unit already defined in an other LoadUnits
+        """
+        self.units.append(unit)
 
     def export_to_json(self):
         print("Export load units data in a json file ...")

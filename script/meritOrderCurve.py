@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from typing import Optional
-import step1
 
 class MeritOrderCurve:
 
@@ -102,16 +101,16 @@ class MeritOrderCurve:
 # ##############################################################################################
 
 ## Production
-prod = np.array(step1.p_max)
-prod_bids = np.array(step1.cost)
+# prod = np.array(step1.p_max)
+# prod_bids = np.array(step1.cost)
 
-# Demand
-demands = np.array(step1.demand)
-demands_bids = np.array([300])
+# # Demand
+# demands = np.array(step1.demand)
+# demands_bids = np.array([300])
 
-# Plot
-curve = MeritOrderCurve(prod,prod_bids,demands,demands_bids)
-curve.merit_order_curve()
+# # Plot
+# curve = MeritOrderCurve(prod,prod_bids,demands,demands_bids)
+# curve.merit_order_curve()
 
 
 # ##############################################################################################

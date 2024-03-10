@@ -34,6 +34,12 @@ class GenerationUnits:
         }
 
         self.units.append(unit)
+    
+    def add_constructed_unit(self, unit: dict):
+        """
+        Add a unit already defined in an other GenerationUnits
+        """
+        self.units.append(unit)
 
     def export_to_json(self):
         print("Export generation units data in a json file ...")
