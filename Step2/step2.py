@@ -218,8 +218,8 @@ actualise_SoC = [
     m.addConstr(state_of_charge[t+1] == state_of_charge[t] + power_injected_drawn[t]*efficiency*delta_t)
     for t in range(nbHour-1)
 ]
-m.addConstr(state_of_charge[0] == state_of_charge[-1])
 m.addConstr(state_of_charge[0] == value_beginning_and_end)
+m.addConstr(state_of_charge[0] - state_of_charge[-1] <= 0)
 
 m.optimize()
 
