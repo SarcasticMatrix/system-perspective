@@ -49,3 +49,19 @@ print('Generation units :')
 for j in range(12+6):
     print(f'    Generation unit {j+1} produces: {round(p.X[j],2)} - Profit: {round(p.X[j]*price,2)}')
 print(f'Social welfare is: {D*price - m.getObjective().getValue()}')
+
+
+import matplotlib.pyplot as plt
+
+generation_units = [f"{j+1}" for j in range(12+6)]
+production = [round(p.X[j],2) for j in range(12+6)]
+revenue = [round(p.X[j]*price,2)/1000 for j in range(12+6)]
+
+plt.figure()
+plt.bar(generation_units, production)
+plt.ylabel('Power generation (MW)')
+plt.xlabel('Unit')
+plt.title('Production by Generation Unit')
+plt.grid(which='minor', linestyle='--', linewidth=0.1, color='gray')
+plt.grid(axis='y', linestyle="--", linewidth=0.5, color="gray")
+plt.show()
