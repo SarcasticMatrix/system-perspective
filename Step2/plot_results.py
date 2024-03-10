@@ -55,7 +55,8 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
 
     plt.figure()
     clearing_price = results["Clearing price"].values.tolist()
-    plt.step(hours, clearing_price + [clearing_price[-1]], where='post', linewidth=0.8, color='blue', label="Clearing price")
+    plt.step(hours, clearing_price + [clearing_price[-1]], where='post', linewidth=0.8, color='blue')
+    plt.title("Market clearing price")
     plt.axhline(y=0, linestyle="--", linewidth=0.5, color="gray")
     plt.ylabel("€/GWh")
     plt.xlabel("Hours")
