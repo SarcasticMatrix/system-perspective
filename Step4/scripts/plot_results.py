@@ -126,3 +126,30 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
     plt.grid(axis="x", linestyle="--", linewidth=0.5, color="gray")
     plt.grid(which="major", linestyle="-", linewidth=0.1, color="gray")
     plt.show()
+
+
+import networkx as nx
+from nodes import Nodes
+def plot_nodes(nodes:Nodes):
+    """"
+    - list_nodes:list,
+    - list_edges:list, list of tuples
+    - list_name_nodes:list, 
+    """
+    G = nx.DiGraph()
+
+    index = 1
+    for node in nodes.nodes:
+        G.add_nodes_from([node['Id']])
+
+        G.nodes[index]['nom'] = f"Node {index}"
+        index += 1
+
+        for to_node_id in nodes.get_to_node(): 
+            G.add_edges_from([(node['Id'], to_node_id)])
+            G.edges[(node['Id'], to_node_id)]['Capacity'] = node.get_capacity(node["Id"], to_node_id)
+
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, font_weight='bold', node_size=700, node_color='lightblue', font_color='black', font_size=8, arrowsize=10)
+
+    plt.show()
