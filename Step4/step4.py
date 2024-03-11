@@ -3,13 +3,6 @@ import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
 
-# import os
-# try:
-#     os.chdir('Step4')
-# except:
-#     pass
-# cd C:\Users\julia\OneDrive\DTU\course\S2\46755 - Renewables in Electricity Markets\Assignment1 - git
-
 ################################################################################
 # Creation of Conventionnal Generation Units
 ################################################################################
