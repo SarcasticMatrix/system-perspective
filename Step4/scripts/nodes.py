@@ -30,3 +30,17 @@ class Nodes:
         }
 
         self.nodes.append(node)
+    
+    def get_ids_load(self,id_node):
+        """
+        return the ids of the loads located at the considered node
+        """
+        
+        # Select the considered node
+        for node in self.nodes:
+            if node["Id"] == id_node:
+                break
+        
+        # find the load units
+        return [load["Id"] for load in node["Load units"]]
+
