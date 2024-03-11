@@ -15,7 +15,6 @@ class LoadUnits:
         load_percentage: float,
         total_needed_demand: np.array,
     ):
-
         """
         - Id (int): id of the load unit.
         - Id node (int): id of the node where the load unit is located.

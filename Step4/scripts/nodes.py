@@ -1,6 +1,7 @@
 from scripts.generationUnits import GenerationUnits
 from scripts.loadUnits import LoadUnits
 
+
 class Nodes:
     """
     Represents the nodes within a power system network.
@@ -22,7 +23,13 @@ class Nodes:
     def __init__(self):
         self.nodes = []
 
-    def add_node(self, id: int, generationUnits: GenerationUnits, loadUnits: LoadUnits, transmissionLines: list):
+    def add_node(
+        self,
+        id: int,
+        generationUnits: GenerationUnits,
+        loadUnits: LoadUnits,
+        transmissionLines: list,
+    ):
         """
         Adds a new node to the system with specified characteristics.
 
@@ -115,4 +122,7 @@ class Nodes:
         """
         for node in self.nodes:
             if node["Id"] == id_node:
-                return [transmission_line.to_node for transmission_line in node["Transmission line"]]
+                return [
+                    transmission_line.to_node
+                    for transmission_line in node["Transmission line"]
+                ]

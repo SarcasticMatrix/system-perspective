@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from typing import Optional
 
+
 class MeritOrderCurve:
 
     def __init__(
@@ -19,12 +20,14 @@ class MeritOrderCurve:
         self.demands_marginal_costs = demands_marginal_costs
         self.boolean_cst_demand = boolean_cst_demand
 
-        self.minimum_bids = min(0,np.min(self.prod_marginal_costs))
+        self.minimum_bids = min(0, np.min(self.prod_marginal_costs))
 
         try:
             if self.demands_marginal_costs == None and self.boolean_cst_demand == False:
                 self.boolean_cst_demand = True
-                print("[Attention] Les coûts marginaux pour la demande n'ont pas été spécifiés, et il n'a pas été indiqué que la demande est constante.")
+                print(
+                    "[Attention] Les coûts marginaux pour la demande n'ont pas été spécifiés, et il n'a pas été indiqué que la demande est constante."
+                )
         except:
             None
 
@@ -56,8 +59,10 @@ class MeritOrderCurve:
             f"Demand ... \n Costs:  {sorted_costs} \n Demand: {sorted_productions} \n "
         )
 
-        sorted_productions = np.concatenate((sorted_productions,np.array([sorted_productions[-1]])))
-        sorted_costs = np.concatenate((sorted_costs,np.array([self.minimum_bids])))
+        sorted_productions = np.concatenate(
+            (sorted_productions, np.array([sorted_productions[-1]]))
+        )
+        sorted_costs = np.concatenate((sorted_costs, np.array([self.minimum_bids])))
 
         return sorted_productions, sorted_costs
 
@@ -89,13 +94,14 @@ class MeritOrderCurve:
         plt.xticks(np.arange(0, max(sorted_productions), 100))
         minor_locator = MultipleLocator(10)
         plt.gca().xaxis.set_minor_locator(minor_locator)
-        plt.grid(True, which='major', linestyle='--', linewidth=0.7, color='gray')
-        plt.grid(True, which='minor', linestyle='--', linewidth=0.3, color='lightgray')
+        plt.grid(True, which="major", linestyle="--", linewidth=0.7, color="gray")
+        plt.grid(True, which="minor", linestyle="--", linewidth=0.3, color="lightgray")
 
         plt.title("Merit Order Curve")
         plt.legend()
         plt.show()
-        
+
+
 # ##############################################################################################
 # ## EXAMPLE 1 #################################################################################
 # ##############################################################################################

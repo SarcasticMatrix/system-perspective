@@ -1,11 +1,12 @@
 import numpy as np
 import json
 
+
 class LoadUnits:
     def __init__(self):
         """
         Initializes the LoadUnits class.
-        
+
         Attributes:
             units (list): A list to store information about each load unit.
         """

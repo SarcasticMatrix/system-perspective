@@ -1,10 +1,11 @@
 import json
 
+
 class GenerationUnits:
     def __init__(self):
         """
         Initializes the GenerationUnits class.
-        
+
         Attributes:
             units (list): A list to store information about each generation unit.
         """

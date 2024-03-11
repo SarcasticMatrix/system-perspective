@@ -249,20 +249,16 @@ demand_supplied_constraint = [
 # Supplied demand match generation
 balance_constraint = [
     m.addConstr(
-        sum(
-            demand_supplied[t, l]
-            for l in nodes.get_ids_load(n)
-            )
+        sum(demand_supplied[t, l] for l in nodes.get_ids_load(n))
         - gp.quicksum(production[t, g] for g in nodes.get_ids_generation(n))
-        + power_injected_drawn[t]*(n == 7)
+        + power_injected_drawn[t] * (n == 7)
         + sum(
-           nodes.get_susceptances(n, to_node)
-            * (
-                voltage_angle[t,n-1]
-                - voltage_angle[t,to_node-1]
-            )
-            for to_node in nodes.get_to_node(n))
-        == 0)
+            nodes.get_susceptances(n, to_node)
+            * (voltage_angle[t, n - 1] - voltage_angle[t, to_node - 1])
+            for to_node in nodes.get_to_node(n)
+        )
+        == 0
+    )
     for t in range(nbHour)
     for n in range(1, nbNode + 1)
 ]
@@ -313,27 +309,19 @@ m.addConstr(state_of_charge[0] == value_beginning_and_end)
 m.addConstr(state_of_charge[0] - state_of_charge[-1] <= 0)
 
 
-m.addConstr(
-        voltage_angle[t,0] == 0
-    )
+m.addConstr(voltage_angle[t, 0] == 0)
 
 
 # Node constraints
 power_flow_constraint_init = [
-    m.addConstr(
-            voltage_angle[t,0] == 0
-        )
-    for t in range(nbHour)
+    m.addConstr(voltage_angle[t, 0] == 0) for t in range(nbHour)
 ]
 
 power_flow_constraint_lower_limit = [
     m.addConstrs(
         -nodes.get_capacity(n, to_node)
         <= nodes.get_susceptances(n, to_node)
-        * (
-            voltage_angle[t,n-1]
-            - voltage_angle[t,to_node-1]
-        )
+        * (voltage_angle[t, n - 1] - voltage_angle[t, to_node - 1])
         for to_node in nodes.get_to_node(n)
     )
     for n in range(1, nbNode + 1)
@@ -342,10 +330,7 @@ power_flow_constraint_lower_limit = [
 power_flow_constraint_upper_limit = [
     m.addConstrs(
         nodes.get_susceptances(n, to_node)
-        * (
-            voltage_angle[t,n-1]
-            - voltage_angle[t,to_node-1]
-        )
+        * (voltage_angle[t, n - 1] - voltage_angle[t, to_node - 1])
         <= nodes.get_capacity(n, to_node)
         for to_node in nodes.get_to_node(n)
     )
