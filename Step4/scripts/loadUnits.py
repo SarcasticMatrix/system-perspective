@@ -14,7 +14,6 @@ class LoadUnits:
         load_percentage: float,
         total_needed_demand: np.array,
     ):
-
         """
         - Id (int): id of the load unit.
         - Id node (int): id of the node where the load unit is located.
@@ -33,7 +32,7 @@ class LoadUnits:
         }
 
         self.units.append(load)
-    
+
     def add_constructed_unit(self, unit: dict):
         """
         Add a unit already defined in an other LoadUnits
@@ -53,3 +52,6 @@ class LoadUnits:
             outfile.write(json_object)
 
         print("Export is done ...")
+
+    def get_ids(self):
+        return([unit["Id"] for unit in self.units])

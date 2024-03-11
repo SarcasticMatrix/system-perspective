@@ -1,9 +1,10 @@
 from scripts.generationUnits import GenerationUnits
 from scripts.loadUnits import LoadUnits
 
+
 class Nodes:
     """
-    Class which represents the nodes in the system. 
+    Class which represents the nodes in the system.
     Is a list of node, each node is a dictionnary and is defined with the following attributes,
         - id: id of the node (int),
         - generationUnits: all the generation units located at this node (GenerationUnits),
@@ -15,23 +16,23 @@ class Nodes:
         self.nodes = []
 
     def add_node(
-            self,
-            id: int,
-            generationUnits: GenerationUnits,
-            loadUnits: LoadUnits,
-            transmissionLines:list,
+        self,
+        id: int,
+        generationUnits: GenerationUnits,
+        loadUnits: LoadUnits,
+        transmissionLines: list,
     ):
-        
+
         node = {
             "Id": id,
             "Generation units": generationUnits,
             "Load units": loadUnits,
-            "Transmission line": transmissionLines
+            "Transmission line": transmissionLines,
         }
 
         self.nodes.append(node)
-    
-    def get_ids_load(self,id_node):
+
+    def get_ids_load(self, id_node):
         """
         return the ids of the load units located at the considered node
         """
@@ -40,32 +41,59 @@ class Nodes:
         for node in self.nodes:
             if node["Id"] == id_node:
                 break
-        
+
         # find the load units
-        return [load["Id"] for load in node["Load units"]]
-    
-    def get_ids_generation(self,id_node):
+        return node["Load units"].get_ids()
+
+    def get_ids_generation(self, id_node):
         """
         return the ids of the generation units located at the considered node
         """
-        
+
         # Select the considered node
         for node in self.nodes:
             if node["Id"] == id_node:
                 break
         
         # find the generation units
-        return [generation["Id"] for generation in node["Generation units"]]
+        return node["Generation units"].get_ids()
 
-    def get_transmission(self,id_node):
+    def get_susceptances(self, id_node, to_node):
         """
-        return the the transmission line located at the considered node
+        return the susceptance line between id_node and to_node
         """
-        
+
         # Select the considered node
         for node in self.nodes:
             if node["Id"] == id_node:
                 break
-        
-        # find the transmission lines
-        return node["Transmission line"]
+
+        for transmissionLine in node["Transmission line"]:
+            if transmissionLine.to_node == to_node:
+                return transmissionLine.susceptance 
+
+    def get_capacity(self, id_node, to_node):
+        """
+        return the capacity of of the transmission line between id_node and to_node
+        """
+
+        # Select the considered node
+        for node in self.nodes:
+            if node["Id"] == id_node:
+                break
+
+        for transmissionLine in node["Transmission line"]:
+            if transmissionLine.to_node == to_node:
+                return transmissionLine.capacity 
+    
+    def get_to_node(self,id_node):
+        """
+        return list of the to_node ids of all the neighbourg at the considered node
+        """
+
+        # Select the considered node
+        for node in self.nodes:
+            if node["Id"] == id_node:
+                break
+
+        return [transmission_line.to_node for transmission_line in node["Transmission line"]]

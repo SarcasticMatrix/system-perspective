@@ -33,7 +33,7 @@ class GenerationUnits:
         }
 
         self.units.append(unit)
-    
+
     def add_constructed_unit(self, unit: dict):
         """
         Add a unit already defined in an other GenerationUnits
@@ -54,6 +54,8 @@ class GenerationUnits:
 
         print("Export is done ...")
 
+    def get_ids(self):
+        return([unit["Id"] for unit in self.units])
 
 # # Exemple d'utilisation
 # generation_units = GenerationUnits()
