@@ -33,9 +33,9 @@ class Nodes:
     
     def get_ids_load(self,id_node):
         """
-        return the ids of the loads located at the considered node
+        return the ids of the load units located at the considered node
         """
-        
+
         # Select the considered node
         for node in self.nodes:
             if node["Id"] == id_node:
@@ -43,4 +43,29 @@ class Nodes:
         
         # find the load units
         return [load["Id"] for load in node["Load units"]]
+    
+    def get_ids_generation(self,id_node):
+        """
+        return the ids of the generation units located at the considered node
+        """
+        
+        # Select the considered node
+        for node in self.nodes:
+            if node["Id"] == id_node:
+                break
+        
+        # find the generation units
+        return [generation["Id"] for generation in node["Generation units"]]
 
+    def get_transmission(self,id_node):
+        """
+        return the the transmission line located at the considered node
+        """
+        
+        # Select the considered node
+        for node in self.nodes:
+            if node["Id"] == id_node:
+                break
+        
+        # find the transmission lines
+        return node["Transmission line"]

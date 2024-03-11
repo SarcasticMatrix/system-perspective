@@ -30,7 +30,6 @@ class GenerationUnits:
             "Ramp up": ramp_up,
             "Ramp down": ramp_down,
             "Initial production": prod_init,
-            # "Production":
         }
 
         self.units.append(unit)
