@@ -387,6 +387,7 @@ results["Battery production"] = power_injected_drawn.X
 results["State of charge"] = state_of_charge.X / max_SoC
 results["Battery profit"] = results["Clearing price"] * results["Battery production"]
 
-from Step4.scripts.plot_results import plot_results
+from scripts.plot_results import plot_results,plot_nodes
 
 plot_results(nbUnits=nbUnits, results=results)
+plot_nodes(nodes=nodes)

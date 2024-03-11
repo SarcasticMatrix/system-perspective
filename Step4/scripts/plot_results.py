@@ -106,30 +106,10 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
     plt.show()
 
     plt.figure()
-    battery_profit = results["Battery profit"].values.tolist()
-
-    total_revenue = round(results["Battery profit"].sum())
-    plt.title(f"Total profit: {total_revenue}")
-    plt.step(
-        hours,
-        battery_profit + [battery_profit[-1]],
-        where="post",
-        linewidth=0.8,
-        color="blue",
-        label="Battery profit",
-    )
-    plt.axhline(y=0, linestyle="--", linewidth=0.5, color="gray")
-    plt.ylabel("€")
-    plt.xlabel("Hours")
-    plt.legend(loc="upper left")
-    plt.grid(which="minor", linestyle="--", linewidth=0.1, color="gray")
-    plt.grid(axis="x", linestyle="--", linewidth=0.5, color="gray")
-    plt.grid(which="major", linestyle="-", linewidth=0.1, color="gray")
-    plt.show()
 
 
 import networkx as nx
-from nodes import Nodes
+from scripts.nodes import Nodes
 def plot_nodes(nodes:Nodes):
     """"
     - list_nodes:list,
@@ -145,9 +125,9 @@ def plot_nodes(nodes:Nodes):
         G.nodes[index]['nom'] = f"Node {index}"
         index += 1
 
-        for to_node_id in nodes.get_to_node(): 
+        for to_node_id in nodes.get_to_node(node['Id']): 
             G.add_edges_from([(node['Id'], to_node_id)])
-            G.edges[(node['Id'], to_node_id)]['Capacity'] = node.get_capacity(node["Id"], to_node_id)
+            G.edges[(node['Id'], to_node_id)]['Capacity'] = nodes.get_capacity(node["Id"], to_node_id)
 
     pos = nx.spring_layout(G)
     nx.draw(G, pos, with_labels=True, font_weight='bold', node_size=700, node_color='lightblue', font_color='black', font_size=8, arrowsize=10)
