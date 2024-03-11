@@ -444,7 +444,7 @@
         "Initial production": 280
     },
     "Generation unit 12": {
-        "Id": 0,
+        "Id": 12,
         "Id node": 3,
         "Type": "wind_turbine",
         "Cost": 0,
@@ -481,7 +481,7 @@
         "Initial production": 0
     },
     "Generation unit 13": {
-        "Id": 1,
+        "Id": 13,
         "Id node": 5,
         "Type": "wind_turbine",
         "Cost": 0,
@@ -518,7 +518,7 @@
         "Initial production": 0
     },
     "Generation unit 14": {
-        "Id": 2,
+        "Id": 14,
         "Id node": 7,
         "Type": "wind_turbine",
         "Cost": 0,
@@ -555,7 +555,7 @@
         "Initial production": 0
     },
     "Generation unit 15": {
-        "Id": 3,
+        "Id": 15,
         "Id node": 16,
         "Type": "wind_turbine",
         "Cost": 0,
@@ -592,7 +592,7 @@
         "Initial production": 0
     },
     "Generation unit 16": {
-        "Id": 4,
+        "Id": 16,
         "Id node": 21,
         "Type": "wind_turbine",
         "Cost": 0,
@@ -629,7 +629,7 @@
         "Initial production": 0
     },
     "Generation unit 17": {
-        "Id": 5,
+        "Id": 17,
         "Id node": 23,
         "Type": "wind_turbine",
         "Cost": 0,

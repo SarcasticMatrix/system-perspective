@@ -61,7 +61,7 @@ for unit_id in range(nbUnitsWind):
     ].values.tolist()
 
     generation_units.add_unit(
-        unit_id=unit_id,
+        unit_id=unit_id + nbUnitsConventionnal,
         node_id=nodes[unit_id],
         unit_type="wind_turbine",
         cost=costs[unit_id],

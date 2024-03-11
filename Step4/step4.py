@@ -3,6 +3,13 @@ import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
 
+# import os
+# try:
+#     os.chdir('Step4')
+# except:
+#     pass
+# cd C:\Users\julia\OneDrive\DTU\course\S2\46755 - Renewables in Electricity Markets\Assignment1 - git
+
 ################################################################################
 # Creation of Conventionnal Generation Units
 ################################################################################
@@ -32,7 +39,7 @@ for unit_id in range(nbUnitsConventionnal):
         cost=costs[unit_id],
         pmax=pmax[unit_id],
         pmin=pmin[unit_id],
-        availability=[1] * 24,
+        availability=[1] * 24,          #100% availability for each hour
         ramp_up=ramp_up[unit_id],
         ramp_down=ramp_down[unit_id],
         prod_init=prod_init[unit_id],
@@ -59,7 +66,7 @@ for unit_id in range(nbUnitsWind):
     ].values.tolist()
 
     generation_units.add_unit(
-        unit_id=unit_id,
+        unit_id=unit_id + nbUnitsConventionnal,
         node_id=nodes[unit_id],
         unit_type="wind_turbine",
         cost=costs[unit_id],
@@ -112,8 +119,9 @@ from scripts.nodes import Nodes
 from scripts.transmissionLine import TransmissionLine
 
 nodes = Nodes()
+nbNode = 24
 
-for id_node in range(1,24):
+for id_node in range(1,nbNode+1):
 
     print("-"*40)
     print(f"Work on node: {id_node}")
@@ -169,3 +177,190 @@ for id_node in range(1,24):
     )
 
 nodes = nodes.nodes 
+
+
+################################################################################
+# Adding of the battery
+################################################################################
+efficiency = np.sqrt(0.937)
+min_SoC = 0 #minimum of state of charge
+max_SoC = 600 #MWh maximum of state of charge = battery capacity
+value_beginning_and_end = max_SoC/2
+P_max = 150 #MW
+delta_t= 1 #hour
+
+################################################################################
+# Model
+################################################################################
+
+m = gp.Model()
+
+# Variables
+production = m.addMVar(
+    shape=(nbHour, nbUnits), lb=0, name="power_generation", vtype=GRB.CONTINUOUS
+)
+demand_supplied = m.addMVar(
+    shape=(nbHour, nbLoadUnits), lb=0, name=f"demand_supplied", vtype=GRB.CONTINUOUS
+)
+state_of_charge = m.addMVar(
+    shape=(nbHour,), lb=min_SoC, ub=max_SoC, name=f"state_of_charge", vtype=GRB.CONTINUOUS
+)
+power_injected_drawn = m.addMVar(
+    shape=(nbHour,), lb=-P_max, ub=P_max, name=f"power_injected_or_drawn", vtype=GRB.CONTINUOUS
+)
+voltage_angle = m.addMVar(
+    shape=(nbHour,nbNode), name=f"voltage_angle", vtype=GRB.CONTINUOUS
+)
+
+# Objective function
+objective = gp.quicksum(
+    demand_supplied[t, l] * load_units.units[l]["Bid price"]
+    for t in range(nbHour)
+    for l in range(nbLoadUnits)
+) - gp.quicksum(
+    production[t, g] * generation_units.units[g]["Cost"]
+    for t in range(nbHour)
+    for g in range(nbUnits)
+)
+m.setObjective(objective, GRB.MAXIMIZE)
+
+# Constraints
+
+# generation unitsP have a _max 
+max_prod_constraint = [
+    m.addConstr(
+        production[t, g]
+        <= generation_units.units[g]["PMAX"]
+        * generation_units.units[g]["Availability"][t]
+    )
+    for g in range(nbUnits)
+    for t in range(nbHour)
+]
+
+# Cannot supply more than necessary
+demand_supplied_constraint = [
+    m.addConstr(demand_supplied[t, l] <= load_units.units[l]["Needed demand"][t])
+    for l in range(nbLoadUnits)
+    for t in range(nbHour)
+]
+
+# Supplied demand match generation
+balance_constraint = [
+    m.addConstr(
+        sum(demand_supplied[t, l] for l in nodes[n]["Load unit"].units[u]["unit_id"] for u in range(len(nodes[n]["Load unit"])))
+        - gp.quicksum(production[t, g] for g in range(nbUnits)) 
+        + power_injected_drawn[t] 
+        + sum(nodes[n]["Transmission line"][tr]["susceptance"]*(voltage_angle[nodes[t,n]["Transmission line"][tr]["from"]]-voltage_angle[nodes[n]["Transmission line"][tr]["to"]]) for tr in range(len(nodes[n]["Transmission line"])))
+        == 0,
+        name=f"GenerationBalance_{t+1}",
+    )
+    for t in range(nbHour)
+    for n in range(1, nbNode + 1)
+]
+
+# Ramp-up and ramp-down constraint
+ramp_up_constraint = []
+ramp_down_constraint = []
+for g in range(nbUnits):
+    for t in range(nbHour):
+        if t == 0: # Apply the special condition for t=0
+            ramp_up_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    <= generation_units.units[g]["Initial production"] + generation_units.units[g]["Ramp up"],
+                )
+            )
+            ramp_down_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    >= generation_units.units[g]["Initial production"] - generation_units.units[g]["Ramp down"],
+                )
+            )
+        else: # Apply the regular ramp-down constraint for t>0
+            ramp_up_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    <= production[t-1, g] + generation_units.units[g]["Ramp up"],
+                )
+            )
+            ramp_down_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    >= production[t-1, g] - generation_units.units[g]["Ramp down"],
+                )
+            )
+
+# Battery constraints
+actualise_SoC = [
+    m.addConstr(state_of_charge[t+1] == state_of_charge[t] + power_injected_drawn[t]*efficiency*delta_t)
+    for t in range(nbHour-1)
+]
+m.addConstr(state_of_charge[0] == value_beginning_and_end)
+m.addConstr(state_of_charge[0] - state_of_charge[-1] <= 0)
+
+
+#Node constraints
+power_flow_constraint_lower_limit = [
+    m.addConstr(-nodes[n]["Transmission line"][tr]["capacity"] 
+                <=nodes[n]["Transmission line"][tr]["susceptance"]*(voltage_angle[nodes[t,n]["Transmission line"][tr]["from"]]-voltage_angle[nodes[n]["Transmission line"][tr]["to"]]) 
+                for tr in range(len(nodes[n]["Transmission line"])))
+    for n in range(1, nbNode + 1)
+    for t in range(nbHour)
+]
+power_flow_constraint_upper_limit = [
+    m.addConstr(nodes[n]["Transmission line"][tr]["susceptance"]*(voltage_angle[nodes[t,n]["Transmission line"][tr]["from"]]-voltage_angle[nodes[n]["Transmission line"][tr]["to"]])
+                <= nodes[n]["Transmission line"][tr]["capacity"] 
+                for tr in range(len(nodes[n]["Transmission line"])))
+    for n in range(1, nbNode + 1)
+    for t in range(nbHour)
+]
+
+m.optimize()
+
+################################################################################
+# Results
+################################################################################
+
+clearing_price = [balance_constraint[t].Pi for t in range(nbHour)]
+clearing_price_values = [price_item.flatten()[0] for price_item in clearing_price] #remove the array values
+
+profit = [
+    [
+        production[t][g].X * (clearing_price[t] - generation_units.units[g]["Cost"])
+        for g in range(nbUnits)
+    ]
+    for t in range(nbHour)
+]
+
+demand_unsatisfied = [
+    total_needed_demand[t] - np.sum(demand_supplied[t][l].X for l in range(nbLoadUnits)) for t in range(nbHour)
+]
+
+# print result
+# print(f"Optimal objective value: {m.objVal} $")
+# for t in range(nbHour):
+#     for g in range(nbUnits):
+#         print(
+#             f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
+#         )
+#     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
+# print("clearing price:", clearing_price_values)
+# print("demand unsatisfied:", demand_unsatisfied)
+# print("SoC:", state_of_charge.X)
+
+results = pd.DataFrame()
+results['Hour'] = np.arange(nbHour)
+for g in range(nbUnits):
+    results[f"PU production {g+1} (GW)"] =  [production[t][g].X for t in range(nbHour)]
+    results[f"PU profit {g+1} ($)"] =  [profit[t][g] for t in range(nbHour)]
+results["Clearing price"] = clearing_price_values
+results["Demand"] = total_needed_demand
+results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
+results["Demand unsatisfied"] = demand_unsatisfied
+results["Battery production"] = power_injected_drawn.X
+results["State of charge"] = state_of_charge.X/max_SoC
+results["Battery profit"] = results["Clearing price"]*results["Battery production"]
+
+from plot_results import plot_results
+plot_results(nbUnits=nbUnits,results=results)
+
