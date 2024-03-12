@@ -1,6 +1,6 @@
 from scripts.generationUnits import GenerationUnits
 from scripts.loadUnits import LoadUnits
-
+from scripts.generationUnits import GenerationUnits
 
 class Nodes:
     """
