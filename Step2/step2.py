@@ -103,7 +103,7 @@ for unit_id in range(nbLoadUnits):
     load_units.add_unit(
         load_id=unit_id,
         node_id=nodes[unit_id],
-        bid_price=50,
+        bid_price=30,
         load_percentage=load_percentage[unit_id],
         total_needed_demand=total_needed_demand,
     )
