@@ -176,7 +176,7 @@ for id_node in range(1, nbNode + 1):
 ################################################################################
 # Adding of the battery
 ################################################################################
-efficiency = np.sqrt(0.937)
+efficiency = 1 #np.sqrt(0.937)
 min_SoC = 0  # minimum of state of charge
 max_SoC = 600  # MWh maximum of state of charge = battery capacity
 value_beginning_and_end = max_SoC / 2
