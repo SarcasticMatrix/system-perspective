@@ -178,9 +178,9 @@ for id_node in range(1, nbNode + 1):
 
 from scripts.zone import Zone
 
-node_ids_zone1 = [1, 2, 4, 5, 7, 8, 9, 11]  # Id of the nodes in zone 1
+node_ids_zone1 = [3, 14, 15, 16, 17, 18, 21, 22, 24] # Id of the nodes in zone 1
 node_ids_zone2 = [6, 8, 10, 12, 13, 19, 20, 23]  # Id of the nodes in zone 2
-node_ids_zone3 = [3, 14, 15, 16, 17, 18, 21, 22, 24]  # Id of the nodes in zone 3
+node_ids_zone3 = [1, 2, 4, 5, 7, 8, 9, 11]  # Id of the nodes in zone 3
 
 
 zone1 = Zone()
