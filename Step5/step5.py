@@ -3,13 +3,15 @@ import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
 
+# cd C:\Users\julia\OneDrive\DTU\course\S2\46755 - Renewables in Electricity Markets\Assignment1 - git
+
 ################################################################################
 # Creation of Conventionnal Generation Units
 ################################################################################
 
-from scripts.generationUnits import GenerationUnits
+from generationUnits import GenerationUnits
 
-# parameter unit
+# Parameter units
 generationUnits_parameters = pd.read_csv("inputs/gen_parameters.csv", sep=";")
 
 nodes = generationUnits_parameters["Node"].values
@@ -36,7 +38,7 @@ for unit_id in range(nbUnitsConventionnal):
         cost=costs[unit_id],
         pmax=pmax[unit_id],
         pmin=pmin[unit_id],
-        availability=[1] * 24,  # 100% availability for each hour
+        availability=[1] * 24,
         ramp_up=ramp_up[unit_id],
         ramp_down=ramp_down[unit_id],
         prod_init=prod_init[unit_id],
@@ -81,7 +83,7 @@ generation_units.export_to_json()
 # Creation of Loads Units
 ################################################################################
 
-from scripts.loadUnits import LoadUnits
+from loadUnits import LoadUnits
 
 # parameter load
 total_needed_demand = pd.read_csv("inputs/load_profile.csv", sep=";")[
@@ -101,13 +103,14 @@ for unit_id in range(nbLoadUnits):
     load_units.add_unit(
         load_id=unit_id,
         node_id=nodes[unit_id],
-        bid_price=50,
+        bid_price=30,
         load_percentage=load_percentage[unit_id],
         total_needed_demand=total_needed_demand,
     )
 
 load_units.export_to_json()
 
+<<<<<<< Updated upstream
 ################################################################################
 # Create the Nodes
 ################################################################################
@@ -220,6 +223,8 @@ for zoneZ in zones:
 
 # Sinon, réutiliser la Step2 pour chaque zone, puis gérer les transmissions entre chaque zone (normalement il suffit de faire que pour deux zones)
 # Si j'ai pas fait n'importe quoi, la structure des données est la même que dans la Step2. Au lieu d'appeler generation_units, load_units etc. il suffit d'appler zone1.generation_units etc.et pouf ça fait ces chocopics
+=======
+>>>>>>> Stashed changes
 
 ################################################################################
 # Adding of the battery
@@ -258,6 +263,7 @@ power_injected_drawn = m.addMVar(
     name=f"power_injected_or_drawn",
     vtype=GRB.CONTINUOUS,
 )
+<<<<<<< Updated upstream
 flow_interzonal = m.addMVar(
     shape=(nbHour, len(zones), len(zones) - 1),
     name=f"flow_interzonal",
@@ -277,8 +283,18 @@ objective = gp.quicksum(
         production[t, g] * zoneZ.generation_units.units[g]["Cost"]
         for g in range(len(zoneZ.get_id_generators()))
     )
+=======
+
+# Objective function
+objective = gp.quicksum(
+    demand_supplied[t, l] * load_units.units[l]["Bid price"]
     for t in range(nbHour)
-    for zoneZ in zones
+    for l in range(nbLoadUnits)
+) - gp.quicksum(
+    production[t, g] * generation_units.units[g]["Cost"]
+>>>>>>> Stashed changes
+    for t in range(nbHour)
+    for g in range(nbUnits)
 )
 m.setObjective(objective, GRB.MAXIMIZE)
 
@@ -288,26 +304,29 @@ m.setObjective(objective, GRB.MAXIMIZE)
 max_prod_constraint = [
     m.addConstr(
         production[t, g]
-        <= zoneZ.generation_units.units[g]["PMAX"]
-        * zoneZ.generation_units.units[g]["Availability"][t]
+        <= generation_units.units[g]["PMAX"]
+        * generation_units.units[g]["Availability"][t]
     )
+    for g in range(nbUnits)
     for t in range(nbHour)
-    for zoneZ in zones
-    for g in range(len(zoneZ.get_id_generators()))
 ]
 
-
 # Cannot supply more than necessary
+<<<<<<< Updated upstream
 max_demand_supplied_constraint = [
     m.addConstr(demand_supplied[t, l] <= zoneZ.load_units.units[l]["Needed demand"][t])
+=======
+demand_supplied_constraint = [
+    m.addConstr(demand_supplied[t, l] <= load_units.units[l]["Needed demand"][t])
+    for l in range(nbLoadUnits)
+>>>>>>> Stashed changes
     for t in range(nbHour)
-    for zoneZ in zones
-    for l in range(len(zoneZ.get_id_loads()))
 ]
 
 # Supplied demand match generation
 balance_constraint = [
     m.addConstr(
+<<<<<<< Updated upstream
         sum(demand_supplied[t, l] for l in range(len(zoneZ.get_id_loads())))
         - gp.quicksum(production[t, g] for g in range(len(zoneZ.get_id_generators())))
         + power_injected_drawn[t] * (zoneZ == zone3)
@@ -316,12 +335,21 @@ balance_constraint = [
         name=f"GenerationBalance_{t+1}",
     )
     for z, zoneZ in zip(range(len(zones)), zones)
+=======
+        sum(demand_supplied[t, l] for l in range(nbLoadUnits))
+        - gp.quicksum(production[t, g] for g in range(nbUnits))
+        + power_injected_drawn[t]
+        == 0,
+        name=f"GenerationBalance_{t+1}",
+    )
+>>>>>>> Stashed changes
     for t in range(nbHour)
 ]
 
 # Ramp-up and ramp-down constraint
 ramp_up_constraint = []
 ramp_down_constraint = []
+<<<<<<< Updated upstream
 for zoneZ in zones:
     for g in range(len(zoneZ.get_id_generators())):
         for t in range(nbHour):
@@ -332,14 +360,25 @@ for zoneZ in zones:
                         <= zoneZ.generation_units.units[g]["Initial production"]
                         + zoneZ.generation_units.units[g]["Ramp up"],
                     )
+=======
+for g in range(nbUnits):
+    for t in range(nbHour):
+        if t == 0:  # Apply the special condition for t=0
+            ramp_up_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    <= generation_units.units[g]["Initial production"]
+                    + generation_units.units[g]["Ramp up"],
+>>>>>>> Stashed changes
                 )
-                ramp_down_constraint.append(
-                    m.addConstr(
-                        production[t, g]
-                        >= zoneZ.generation_units.units[g]["Initial production"]
-                        - zoneZ.generation_units.units[g]["Ramp down"],
-                    )
+            )
+            ramp_down_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    >= generation_units.units[g]["Initial production"]
+                    - generation_units.units[g]["Ramp down"],
                 )
+<<<<<<< Updated upstream
             else:  # Apply the regular ramp-down constraint for t>0
                 ramp_up_constraint.append(
                     m.addConstr(
@@ -354,7 +393,22 @@ for zoneZ in zones:
                         >= production[t - 1, g]
                         - zoneZ.generation_units.units[g]["Ramp down"],
                     )
+=======
+            )
+        else:  # Apply the regular ramp-down constraint for t>0
+            ramp_up_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    <= production[t - 1, g] + generation_units.units[g]["Ramp up"],
                 )
+            )
+            ramp_down_constraint.append(
+                m.addConstr(
+                    production[t, g]
+                    >= production[t - 1, g] - generation_units.units[g]["Ramp down"],
+>>>>>>> Stashed changes
+                )
+            )
 
 # Battery constraints
 actualise_SoC = [
@@ -366,16 +420,6 @@ actualise_SoC = [
 ]
 m.addConstr(state_of_charge[0] == value_beginning_and_end)
 m.addConstr(state_of_charge[0] - state_of_charge[-1] <= 0)
-
-# Flow between zone constraints
-
-# for z, zoneZ in zip(range(len(zones)), zones):
-#     for notz, notzoneZ in zip(range(len(zones)-1), zones):
-#         if zoneZ != notzoneZ:
-#             for t in range(nbHour):
-#                 m.addConstr(flow_interzonal[t, z, notz] <= sum())
-
-# zoneZ, notzoneZ] for notzoneZ in zones if zoneZ != notzoneZ)
 
 m.optimize()
 

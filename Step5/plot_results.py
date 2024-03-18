@@ -23,7 +23,7 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
     )
     axs[0].axhline(y=0, linestyle="--", linewidth=0.5, color="gray")
     axs[0].axhline(y=1, linestyle="--", linewidth=0.5, color="gray")
-    axs[0].set_ylabel("%")
+    axs[0].set_ylabel("Normalised SoC")
 
     axs[0].legend(loc="upper left")
     axs[0].xaxis.grid(which="minor", linestyle="--", linewidth=0.1, color="gray")
@@ -94,8 +94,8 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
         where="post",
         linewidth=0.8,
         color="blue",
-        label="Clearing price",
     )
+    plt.title("Market clearing price")
     plt.axhline(y=0, linestyle="--", linewidth=0.5, color="gray")
     plt.ylabel("€/GWh")
     plt.xlabel("Hours")
@@ -106,44 +106,23 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
     plt.show()
 
     plt.figure()
+    battery_profit = results["Battery profit"].values.tolist()
 
-
-import networkx as nx
-from scripts.nodes import Nodes
-
-
-def plot_nodes(nodes: Nodes):
-    """ "
-    - list_nodes:list,
-    - list_edges:list, list of tuples
-    - list_name_nodes:list,
-    """
-    G = nx.DiGraph()
-
-    index = 1
-    for node in nodes.nodes:
-        G.add_nodes_from([node["Id"]])
-
-        G.nodes[index]["nom"] = f"Node {index}"
-        index += 1
-
-        for to_node_id in nodes.get_to_node(node["Id"]):
-            G.add_edges_from([(node["Id"], to_node_id)])
-            G.edges[(node["Id"], to_node_id)]["Capacity"] = nodes.get_capacity(
-                node["Id"], to_node_id
-            )
-
-    pos = nx.spring_layout(G)
-    nx.draw(
-        G,
-        pos,
-        with_labels=True,
-        font_weight="bold",
-        node_size=700,
-        node_color="lightblue",
-        font_color="black",
-        font_size=8,
-        arrowsize=10,
+    total_revenue = round(results["Battery profit"].sum())
+    plt.title(f"Total profit: {total_revenue}")
+    plt.step(
+        hours,
+        battery_profit + [battery_profit[-1]],
+        where="post",
+        linewidth=0.8,
+        color="blue",
+        label="Battery profit",
     )
-
+    plt.axhline(y=0, linestyle="--", linewidth=0.5, color="gray")
+    plt.ylabel("€")
+    plt.xlabel("Hours")
+    plt.legend(loc="upper left")
+    plt.grid(which="minor", linestyle="--", linewidth=0.1, color="gray")
+    plt.grid(axis="x", linestyle="--", linewidth=0.5, color="gray")
+    plt.grid(which="major", linestyle="-", linewidth=0.1, color="gray")
     plt.show()
