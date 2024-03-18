@@ -217,13 +217,13 @@ zones = [zone1, zone2, zone3]
 for zoneZ in zones:
     print(zoneZ.get_id_loads())
 
-max_capacity_12 = zone1.compute_max_capacity_between_zones(zone2)
+max_capacity_12 = zone1.compute_capacity_between_zones(zone2)
 max_capacity_21 = max_capacity_12
 
-max_capacity_23 = zone2.compute_max_capacity_between_zones(zone3)
+max_capacity_23 = zone2.compute_capacity_between_zones(zone3)
 max_capacity_32 = max_capacity_23
 
-max_capacity_31 = zone3.compute_max_capacity_between_zones(zone1)
+max_capacity_31 = zone3.compute_capacity_between_zones(zone1)
 max_capacity_13 = max_capacity_31
 
 ################################################################################
@@ -232,7 +232,7 @@ max_capacity_13 = max_capacity_31
 efficiency = np.sqrt(0.937)
 min_SoC = 0  # minimum of state of charge
 max_SoC = 600  # MWh maximum of state of charge = battery capacity
-value_beginning_and_end = max_SoC / 2
+value_init = max_SoC / 2
 P_max = 150  # MW
 delta_t = 1  # hour
 
@@ -256,11 +256,18 @@ state_of_charge = m.addMVar(
     name=f"state_of_charge",
     vtype=GRB.CONTINUOUS,
 )
-power_injected_drawn = m.addMVar(
+power_injected = m.addMVar(
     shape=(nbHour,),
-    lb=-P_max,
+    lb=0,
     ub=P_max,
-    name=f"power_injected_or_drawn",
+    name=f"power_injected",
+    vtype=GRB.CONTINUOUS,
+)
+power_drawn = m.addMVar(
+    shape=(nbHour,),
+    lb=0,
+    ub=P_max,
+    name=f"power_drawn",
     vtype=GRB.CONTINUOUS,
 )
 flow_interzonal = m.addMVar(
@@ -315,7 +322,7 @@ balance_constraint = [
     m.addConstr(
         sum(demand_supplied[t, l] for l in range(len(zoneZ.get_id_loads())))
         - gp.quicksum(production[t, g] for g in range(len(zoneZ.get_id_generators())))
-        + power_injected_drawn[t] * (zoneZ == zone3)
+        - (power_injected[t] - power_drawn[t]) * (zoneZ == zone3)
         + sum(flow_interzonal[t, z, notzoneZ] for notzoneZ in range(len(zones) - 1))
         == 0,
         name=f"GenerationBalance_{t+1}",
@@ -323,6 +330,7 @@ balance_constraint = [
     for z, zoneZ in zip(range(len(zones)), zones)
     for t in range(nbHour)
 ]
+print(len(balance_constraint))
 
 # Ramp-up and ramp-down constraint
 ramp_up_constraint = []
@@ -364,23 +372,24 @@ for zoneZ in zones:
 # Battery constraints
 actualise_SoC = [
     m.addConstr(
-        state_of_charge[t + 1]
-        == state_of_charge[t] + power_injected_drawn[t] * efficiency * delta_t
+        state_of_charge[t]
+        == state_of_charge[t-1] + (- power_injected[t]/efficiency  + power_drawn[t]*efficiency)* delta_t
     )
-    for t in range(nbHour - 1)
+    for t in range(1,nbHour)
 ]
-m.addConstr(state_of_charge[0] == value_beginning_and_end)
-m.addConstr(state_of_charge[0] - state_of_charge[-1] <= 0)
+m.addConstr(state_of_charge[0] == value_init - (power_injected[0]/efficiency  - power_drawn[0]*efficiency))
+m.addConstr(value_init - state_of_charge[-1] <= 0)
 
 # Flow between zone constraints
 
-# for z, zoneZ in zip(range(len(zones)), zones):
-#     for notz, notzoneZ in zip(range(len(zones)-1), zones):
-#         if zoneZ != notzoneZ:
-#             for t in range(nbHour):
-#                 m.addConstr(flow_interzonal[t, z, notz] <= sum())
+for z, zoneZ in zip(range(len(zones)), zones):
+    for notz, notzoneZ in zip(range(len(zones)-1), zones):
+        if zoneZ != notzoneZ:
+            for t in range(nbHour):
+                m.addConstr(flow_interzonal[t, z, notz] <= zoneZ.compute_capacity_between_zones(notzoneZ))
+                m.addConstr(flow_interzonal[t, z, notz] >= - zoneZ.compute_capacity_between_zones(notzoneZ))
 
-# zoneZ, notzoneZ] for notzoneZ in zones if zoneZ != notzoneZ)
+
 
 m.optimize()
 
@@ -427,9 +436,9 @@ results["Clearing price"] = clearing_price_values
 results["Demand"] = total_needed_demand
 results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
 results["Demand unsatisfied"] = demand_unsatisfied
-results["Battery production"] = power_injected_drawn.X
+results["Battery production"] = power_drawn.X - power_injected.X
 results["State of charge"] = state_of_charge.X / max_SoC
-results["Battery profit"] = results["Clearing price"] * results["Battery production"]
+results["Battery profit"] = - results["Clearing price"] * results["Battery production"]
 
 from scripts.plot_results import plot_results
 

@@ -110,121 +110,6 @@ for unit_id in range(nbLoadUnits):
 
 load_units.export_to_json()
 
-<<<<<<< Updated upstream
-################################################################################
-# Create the Nodes
-################################################################################
-
-from scripts.nodes import Nodes
-from scripts.transmissionLine import TransmissionLine
-
-nodes = Nodes()
-nbNode = 24
-
-for id_node in range(1, nbNode + 1):
-
-    print("-" * 40)
-    print(f"Work on node: {id_node}")
-
-    # We add the generation unit which are located at the node
-    node_generation_units = GenerationUnits()
-    print(" Generation units:")
-    for unit in generation_units.units:
-        if unit["Id node"] == id_node:
-            print(f'  - a generation unit is added {unit["Id"]}')
-            node_generation_units.add_constructed_unit(unit)
-
-    # We add the load unit which are at located at the node
-    node_load_units = LoadUnits()
-    print(" Load units:")
-    for unit in load_units.units:
-        if unit["Id node"] == id_node:
-            print(f'  - a load unit is added: {unit["Id"]}')
-            node_load_units.add_constructed_unit(unit)
-
-    # We add the transmission line
-    print(" Transmission lines:")
-    transmission_lines = []
-    transmission_data = pd.read_csv("inputs/transmission_parameters.csv", sep=";")
-    mask = (transmission_data["from"] == id_node) | (transmission_data["to"] == id_node)
-    node_transmission_data = transmission_data.loc[mask]
-
-    for row in range(len(node_transmission_data)):
-
-        to_node = node_transmission_data.iloc[row, 1]
-        if to_node == id_node:
-            to_node = node_transmission_data.iloc[row, 0]
-
-        susceptance = 1 / node_transmission_data.iloc[row, 2]
-        capacity = node_transmission_data.iloc[row, 3]
-
-        transmissionLine = TransmissionLine(
-            from_node=id_node,
-            to_node=to_node,
-            susceptance=susceptance,
-            capacity=capacity,
-        )
-        transmission_lines.append(transmissionLine)
-
-        print(f"  - a transmission line with node {to_node} is added")
-
-    nodes.add_node(
-        id=id_node,
-        generationUnits=node_generation_units,
-        loadUnits=node_load_units,
-        transmissionLines=transmission_lines,
-    )
-
-################################################################################
-# Create the Zones
-################################################################################
-
-from scripts.zone import Zone
-
-node_ids_zone1 = [1, 2, 4, 5, 7, 8, 9, 11]  # Id of the nodes in zone 1
-node_ids_zone2 = [6, 8, 10, 12, 13, 19, 20, 23]  # Id of the nodes in zone 2
-node_ids_zone3 = [3, 14, 15, 16, 17, 18, 21, 22, 24]  # Id of the nodes in zone 3
-
-
-zone1 = Zone()
-zone2 = Zone()
-zone3 = Zone()
-
-for node in nodes.nodes:
-
-    if node["Id"] in node_ids_zone1:
-        zone1.add_constructed_node(node)
-        print(f"Add node {node['Id']} in zone 1")
-    elif node["Id"] in node_ids_zone2:
-        zone2.add_constructed_node(node)
-        print(f"Add node {node['Id']} in zone 2")
-    elif node["Id"] in node_ids_zone3:
-        zone3.add_constructed_node(node)
-        print(f"Add node {node['Id']} in zone 3")
-    else:
-        print("Is not in a zone ?")
-
-zone1.add_transmission_lines()
-zone1.add_generation_units()
-zone1.add_load_units()
-
-zone2.add_transmission_lines()
-zone2.add_generation_units()
-zone2.add_load_units()
-
-zone3.add_transmission_lines()
-zone3.add_generation_units()
-zone3.add_load_units()
-
-zones = [zone1, zone2, zone3]
-for zoneZ in zones:
-    print(zoneZ)
-    print(zoneZ.get_id_loads())
-
-# Sinon, réutiliser la Step2 pour chaque zone, puis gérer les transmissions entre chaque zone (normalement il suffit de faire que pour deux zones)
-# Si j'ai pas fait n'importe quoi, la structure des données est la même que dans la Step2. Au lieu d'appeler generation_units, load_units etc. il suffit d'appler zone1.generation_units etc.et pouf ça fait ces chocopics
-=======
->>>>>>> Stashed changes
 
 ################################################################################
 # Adding of the battery
@@ -232,7 +117,7 @@ for zoneZ in zones:
 efficiency = np.sqrt(0.937)
 min_SoC = 0  # minimum of state of charge
 max_SoC = 600  # MWh maximum of state of charge = battery capacity
-value_beginning_and_end = max_SoC / 2
+value_init = max_SoC / 2
 P_max = 150  # MW
 delta_t = 1  # hour
 
@@ -256,46 +141,31 @@ state_of_charge = m.addMVar(
     name=f"state_of_charge",
     vtype=GRB.CONTINUOUS,
 )
-power_injected_drawn = m.addMVar(
+power_injected = m.addMVar(
     shape=(nbHour,),
-    lb=-P_max,
+    lb=0,
     ub=P_max,
-    name=f"power_injected_or_drawn",
+    name=f"power_injected",
     vtype=GRB.CONTINUOUS,
 )
-<<<<<<< Updated upstream
-flow_interzonal = m.addMVar(
-    shape=(nbHour, len(zones), len(zones) - 1),
-    name=f"flow_interzonal",
+power_drawn = m.addMVar(
+    shape=(nbHour,),
+    lb=0,
+    ub=P_max,
+    name=f"power_drawn",
     vtype=GRB.CONTINUOUS,
 )
-
-# Objective function
-objective = gp.quicksum(
-    sum(
-        demand_supplied[t, l] * zoneZ.load_units.units[l]["Bid price"]
-        for l in range(len(zoneZ.get_id_loads()))
-    )
-    for t in range(nbHour)
-    for zoneZ in zones
-) - gp.quicksum(
-    sum(
-        production[t, g] * zoneZ.generation_units.units[g]["Cost"]
-        for g in range(len(zoneZ.get_id_generators()))
-    )
-=======
 
 # Objective function
 objective = gp.quicksum(
     demand_supplied[t, l] * load_units.units[l]["Bid price"]
     for t in range(nbHour)
     for l in range(nbLoadUnits)
-) - gp.quicksum(
+)  - gp.quicksum(
     production[t, g] * generation_units.units[g]["Cost"]
->>>>>>> Stashed changes
     for t in range(nbHour)
     for g in range(nbUnits)
-)
+) 
 m.setObjective(objective, GRB.MAXIMIZE)
 
 # Constraints
@@ -312,55 +182,26 @@ max_prod_constraint = [
 ]
 
 # Cannot supply more than necessary
-<<<<<<< Updated upstream
-max_demand_supplied_constraint = [
-    m.addConstr(demand_supplied[t, l] <= zoneZ.load_units.units[l]["Needed demand"][t])
-=======
 demand_supplied_constraint = [
     m.addConstr(demand_supplied[t, l] <= load_units.units[l]["Needed demand"][t])
     for l in range(nbLoadUnits)
->>>>>>> Stashed changes
     for t in range(nbHour)
 ]
 
 # Supplied demand match generation
 balance_constraint = [
     m.addConstr(
-<<<<<<< Updated upstream
-        sum(demand_supplied[t, l] for l in range(len(zoneZ.get_id_loads())))
-        - gp.quicksum(production[t, g] for g in range(len(zoneZ.get_id_generators())))
-        + power_injected_drawn[t] * (zoneZ == zone3)
-        + sum(flow_interzonal[t, z, notzoneZ] for notzoneZ in range(len(zones) - 1))
+        sum(demand_supplied[t, l] for l in range(nbLoadUnits)) + power_drawn[t]
+        - gp.quicksum(production[t, g] for g in range(nbUnits)) - power_injected[t] 
         == 0,
         name=f"GenerationBalance_{t+1}",
     )
-    for z, zoneZ in zip(range(len(zones)), zones)
-=======
-        sum(demand_supplied[t, l] for l in range(nbLoadUnits))
-        - gp.quicksum(production[t, g] for g in range(nbUnits))
-        + power_injected_drawn[t]
-        == 0,
-        name=f"GenerationBalance_{t+1}",
-    )
->>>>>>> Stashed changes
     for t in range(nbHour)
 ]
 
 # Ramp-up and ramp-down constraint
 ramp_up_constraint = []
 ramp_down_constraint = []
-<<<<<<< Updated upstream
-for zoneZ in zones:
-    for g in range(len(zoneZ.get_id_generators())):
-        for t in range(nbHour):
-            if t == 0:  # Apply the special condition for t=0
-                ramp_up_constraint.append(
-                    m.addConstr(
-                        production[t, g]
-                        <= zoneZ.generation_units.units[g]["Initial production"]
-                        + zoneZ.generation_units.units[g]["Ramp up"],
-                    )
-=======
 for g in range(nbUnits):
     for t in range(nbHour):
         if t == 0:  # Apply the special condition for t=0
@@ -369,7 +210,6 @@ for g in range(nbUnits):
                     production[t, g]
                     <= generation_units.units[g]["Initial production"]
                     + generation_units.units[g]["Ramp up"],
->>>>>>> Stashed changes
                 )
             )
             ramp_down_constraint.append(
@@ -378,22 +218,6 @@ for g in range(nbUnits):
                     >= generation_units.units[g]["Initial production"]
                     - generation_units.units[g]["Ramp down"],
                 )
-<<<<<<< Updated upstream
-            else:  # Apply the regular ramp-down constraint for t>0
-                ramp_up_constraint.append(
-                    m.addConstr(
-                        production[t, g]
-                        <= production[t - 1, g]
-                        + zoneZ.generation_units.units[g]["Ramp up"],
-                    )
-                )
-                ramp_down_constraint.append(
-                    m.addConstr(
-                        production[t, g]
-                        >= production[t - 1, g]
-                        - zoneZ.generation_units.units[g]["Ramp down"],
-                    )
-=======
             )
         else:  # Apply the regular ramp-down constraint for t>0
             ramp_up_constraint.append(
@@ -406,20 +230,20 @@ for g in range(nbUnits):
                 m.addConstr(
                     production[t, g]
                     >= production[t - 1, g] - generation_units.units[g]["Ramp down"],
->>>>>>> Stashed changes
                 )
             )
 
 # Battery constraints
 actualise_SoC = [
     m.addConstr(
-        state_of_charge[t + 1]
-        == state_of_charge[t] + power_injected_drawn[t] * efficiency * delta_t
+        state_of_charge[t]
+        == state_of_charge[t-1] + (- power_injected[t]/efficiency  + power_drawn[t]*efficiency)* delta_t
     )
-    for t in range(nbHour - 1)
+    for t in range(1,nbHour)
 ]
-m.addConstr(state_of_charge[0] == value_beginning_and_end)
-m.addConstr(state_of_charge[0] - state_of_charge[-1] <= 0)
+m.addConstr(state_of_charge[0] == value_init )# - (power_injected[0]/efficiency  - power_drawn[0]*efficiency))
+m.addConstr(value_init - state_of_charge[-1] <= 0)
+
 
 m.optimize()
 
@@ -466,9 +290,9 @@ results["Clearing price"] = clearing_price_values
 results["Demand"] = total_needed_demand
 results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
 results["Demand unsatisfied"] = demand_unsatisfied
-results["Battery production"] = power_injected_drawn.X
+results["Battery production"] = - power_injected.X + power_drawn.X
 results["State of charge"] = state_of_charge.X / max_SoC
-results["Battery profit"] = results["Clearing price"] * results["Battery production"]
+results["Battery profit"] = -results["Clearing price"] * results["Battery production"]
 
 from plot_results import plot_results
 

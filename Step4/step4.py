@@ -176,10 +176,10 @@ for id_node in range(1, nbNode + 1):
 ################################################################################
 # Adding of the battery
 ################################################################################
-efficiency = 1  # np.sqrt(0.937)
+efficiency = np.sqrt(0.937)
 min_SoC = 0  # minimum of state of charge
-max_SoC = 600  # MWh maximum of state of charge = battery capacity
-value_beginning_and_end = max_SoC / 2
+max_SoC = 0  # MWh maximum of state of charge = battery capacity
+value_init = max_SoC / 2
 P_max = 150  # MW
 delta_t = 1  # hour
 
@@ -203,11 +203,18 @@ state_of_charge = m.addMVar(
     name=f"state_of_charge",
     vtype=GRB.CONTINUOUS,
 )
-power_injected_drawn = m.addMVar(
+power_injected = m.addMVar(
     shape=(nbHour,),
-    lb=-P_max,
+    lb=0,
     ub=P_max,
-    name=f"power_injected_or_drawn",
+    name=f"power_injected",
+    vtype=GRB.CONTINUOUS,
+)
+power_drawn = m.addMVar(
+    shape=(nbHour,),
+    lb=0,
+    ub=P_max,
+    name=f"power_drawn",
     vtype=GRB.CONTINUOUS,
 )
 voltage_angle = m.addMVar(
@@ -251,7 +258,7 @@ balance_constraint = [
     m.addConstr(
         sum(demand_supplied[t, l] for l in nodes.get_ids_load(n))
         - gp.quicksum(production[t, g] for g in nodes.get_ids_generation(n))
-        + power_injected_drawn[t] * (n == 7)
+        - (power_injected[t] - power_drawn[t]) * (n == 7)
         + sum(
             nodes.get_susceptances(n, to_node)
             * (voltage_angle[t, n - 1] - voltage_angle[t, to_node - 1])
@@ -300,16 +307,15 @@ for g in range(nbUnits):
 # Battery constraints
 actualise_SoC = [
     m.addConstr(
-        state_of_charge[t + 1]
-        == state_of_charge[t] + power_injected_drawn[t] * efficiency * delta_t
+        state_of_charge[t]
+        == state_of_charge[t-1] + (- power_injected[t]/efficiency  + power_drawn[t]*efficiency)* delta_t
     )
-    for t in range(nbHour - 1)
+    for t in range(1,nbHour)
 ]
-m.addConstr(state_of_charge[0] == value_beginning_and_end)
-m.addConstr(state_of_charge[0] - state_of_charge[-1] <= 0)
+m.addConstr(state_of_charge[0] == value_init - (power_injected[0]/efficiency  - power_drawn[0]*efficiency))
+m.addConstr(value_init - state_of_charge[-1] <= 0)
 
 
-m.addConstr(voltage_angle[t, 0] == 0)
 
 
 # Node constraints
@@ -337,6 +343,9 @@ power_flow_constraint_upper_limit = [
     for n in range(1, nbNode + 1)
     for t in range(nbHour)
 ]
+
+m.addConstr(voltage_angle[t, 0] == 0)
+
 
 m.optimize()
 
@@ -371,11 +380,11 @@ results["Clearing price"] = clearing_price_values
 results["Demand"] = total_needed_demand
 results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
 results["Demand unsatisfied"] = demand_unsatisfied
-results["Battery production"] = power_injected_drawn.X
+results["Battery production"] = power_injected.X-power_drawn.X
 results["State of charge"] = state_of_charge.X / max_SoC
-results["Battery profit"] = results["Clearing price"] * results["Battery production"]
+results["Battery profit"] = - results["Clearing price"] * results["Battery production"]
 
 from scripts.plot_results import plot_results, plot_nodes
 
 plot_results(nbUnits=nbUnits, results=results)
-plot_nodes(nodes=nodes)
+# plot_nodes(nodes=nodes)
