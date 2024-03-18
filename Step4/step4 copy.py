@@ -12,7 +12,7 @@ from scripts.generationUnits import GenerationUnits
 # parameter unit
 generationUnits_parameters = pd.read_csv("inputs/gen_parameters.csv", sep=";")
 
-nodes = generationUnits_parameters["Node"].values
+nodes = generationUnits_parameters["Node"].values - 1
 costs = generationUnits_parameters["Ci"].values
 pmax = generationUnits_parameters["Pmax"].values
 pmin = generationUnits_parameters["Pmin"].values
@@ -47,7 +47,7 @@ for unit_id in range(nbUnitsConventionnal):
 ################################################################################
 
 wind_parameters = pd.read_csv("inputs/wind_parameters.csv", index_col="Unit", sep=";")
-nodes = wind_parameters["Node"].values
+nodes = wind_parameters["Node"].values - 1
 pmax = wind_parameters["Pmax"].values
 pmin = wind_parameters["Pmin"].values
 costs = wind_parameters["Ci"].values
@@ -56,26 +56,26 @@ scenario = "V1"  # scenario : from V1 to V100
 
 nbUnitsWind = wind_parameters.shape[0]
 nbUnits = nbUnitsConventionnal + nbUnitsWind
-for unit_id in range(nbUnitsWind):
+for id in range(nbUnitsWind):
 
-    availability = pd.read_csv(f"inputs/data/scen_zoneW{unit_id}.csv", sep=",")[
+    availability = pd.read_csv(f"inputs/data/scen_zoneW{id}.csv", sep=",")[
         scenario
     ].values.tolist()
 
     generation_units.add_unit(
-        unit_id=unit_id + nbUnitsConventionnal,
-        node_id=nodes[unit_id],
+        unit_id=id + nbUnitsConventionnal,
+        node_id=nodes[id],
         unit_type="wind_turbine",
-        cost=costs[unit_id],
-        pmax=pmax[unit_id],
-        pmin=pmin[unit_id],
+        cost=costs[id],
+        pmax=pmax[id],
+        pmin=pmin[id],
         availability=availability[:24],
         ramp_up=10000,  # big M, for no constraint on rampu_up
         ramp_down=0,
         prod_init=0,
     )
 
-generation_units.export_to_json()
+#generation_units.export_to_json()
 
 ################################################################################
 # Creation of Loads Units
@@ -92,7 +92,7 @@ nbHour = total_needed_demand.shape[0]
 load_location = pd.read_csv(
     "inputs/load_location.csv", index_col="load_number", sep=";"
 )
-nodes = load_location["node"].values
+nodes = load_location["node"].values - 1
 load_percentage = load_location["load_percentage"].values
 
 load_units = LoadUnits()
@@ -106,7 +106,7 @@ for unit_id in range(nbLoadUnits):
         total_needed_demand=total_needed_demand,
     )
 
-load_units.export_to_json()
+#load_units.export_to_json()
 
 ################################################################################
 # Create the Nodes
@@ -118,7 +118,7 @@ from scripts.transmissionLine import TransmissionLine
 nodes = Nodes()
 nbNode = 24
 
-for id_node in range(1, nbNode + 1):
+for id_node in range(nbNode):
 
     print("-" * 40)
     print(f"Work on node: {id_node}")
@@ -127,8 +127,8 @@ for id_node in range(1, nbNode + 1):
     node_generation_units = GenerationUnits()
     print(" Generation units:")
     for unit in generation_units.units:
-        if unit["Id node"] == id_node:
-            print(f'  - a generation unit is added {unit["Id"]}')
+        if unit["Id node"]== id_node:
+            print(f'  - a generation unit is added {unit["Id"]}' + " wind farm"*(unit["Type"] == "wind_turbine"))
             node_generation_units.add_constructed_unit(unit)
 
     # We add the load unit which are at located at the node
@@ -143,6 +143,8 @@ for id_node in range(1, nbNode + 1):
     print(" Transmission lines:")
     transmission_lines = []
     transmission_data = pd.read_csv("inputs/transmission_parameters.csv", sep=";")
+    transmission_data["from"] += - 1
+    transmission_data["to"] += - 1
     mask = (transmission_data["from"] == id_node) | (transmission_data["to"] == id_node)
     node_transmission_data = transmission_data.loc[mask]
 
@@ -154,7 +156,7 @@ for id_node in range(1, nbNode + 1):
 
         susceptance = 1 / node_transmission_data.iloc[row, 2]
         capacity = node_transmission_data.iloc[row, 3]
-
+        to_node = to_node
         transmissionLine = TransmissionLine(
             from_node=id_node,
             to_node=to_node,
@@ -217,57 +219,60 @@ power_drawn = m.addMVar(
     vtype=GRB.CONTINUOUS,
 )
 voltage_angle = m.addMVar(
-    shape=(nbHour, nbNode), name=f"voltage_angle", vtype=GRB.CONTINUOUS
+    shape=(nbHour, nbNode), 
+    name="voltage_angle", 
+    vtype=GRB.CONTINUOUS
 )
 
 # Objective function
-objective = gp.quicksum(
+objective = sum(
     demand_supplied[t, l] * load_units.units[l]["Bid price"]
     for t in range(nbHour)
     for l in range(nbLoadUnits)
-) - gp.quicksum(
+) - sum(
     production[t, g] * generation_units.units[g]["Cost"]
     for t in range(nbHour)
     for g in range(nbUnits)
 )
 m.setObjective(objective, GRB.MAXIMIZE)
 
-# Constraints
 
-# generation unitsP have a _max
-max_prod_constraint = [
-    m.addConstr(
-        production[t, g]
-        <= generation_units.units[g]["PMAX"]
-        * generation_units.units[g]["Availability"][t]
-    )
-    for g in range(nbUnits)
-    for t in range(nbHour)
-]
+# generation units have a max
+for g in range(nbUnits):
+    for t in range(nbHour):
+        m.addConstr(
+            production[t, g]
+            <= generation_units.units[g]["PMAX"]
+            * generation_units.units[g]["Availability"][t],
+            f"PMAX_generation_unit_{g}_at_time_{t}"
+        )
 
 # Cannot supply more than necessary
-demand_supplied_constraint = [
-    m.addConstr(demand_supplied[t, l] <= load_units.units[l]["Needed demand"][t])
-    for l in range(nbLoadUnits)
-    for t in range(nbHour)
-]
+for l in range(nbLoadUnits):
+    for t in range(nbHour): 
+        m.addConstr(
+            demand_supplied[t, l] <= load_units.units[l]["Needed demand"][t],
+            f"PMAX_load_unit_{g}_at_time_{t}"
+            )
 
 # Supplied demand match generation
-balance_constraint = [
-    m.addConstr(
-        sum(demand_supplied[t, l] for l in nodes.get_ids_load(n))
-        - gp.quicksum(production[t, g] for g in nodes.get_ids_generation(n))
-        - (power_injected[t] - power_drawn[t]) * (n == 7)
-        + sum(
-            nodes.get_susceptances(n, to_node)
-            * (voltage_angle[t, n] - voltage_angle[t, to_node])
-            for to_node in nodes.get_to_node(n)
+balance_constraint = []
+for n in range(nbNode):
+    liste = []
+    for t in range(nbHour):
+        constraint = m.addConstr(
+            sum(demand_supplied[t, l] for l in nodes.get_ids_load(n))
+            - sum(production[t, g] for g in nodes.get_ids_generation(n))
+            + (power_drawn[t] - power_injected[t]) * (n == (7 - 1))
+            - sum(
+                nodes.get_susceptances(n, to_node)
+                * (voltage_angle[t, n] - voltage_angle[t, to_node])
+                for to_node in nodes.get_to_node(n)
+            )
+            == 0
         )
-        == 0
-    )
-    for t in range(nbHour)
-    for n in range(nbNode)
-]
+        liste.append(constraint)
+    balance_constraint.append(liste)
 
 # Ramp-up and ramp-down constraint
 ramp_up_constraint = []
@@ -303,6 +308,7 @@ for g in range(nbUnits):
                 )
             )
 
+
 # Battery constraints
 actualise_SoC = [
     m.addConstr(
@@ -314,9 +320,6 @@ actualise_SoC = [
 m.addConstr(state_of_charge[0] == value_init - (power_injected[0]/efficiency  - power_drawn[0]*efficiency))
 m.addConstr(value_init - state_of_charge[-1] <= 0)
 
-
-
-
 # Node constraints
 power_flow_constraint_init = [
     m.addConstr(voltage_angle[t, 0] == 0) for t in range(nbHour)
@@ -324,66 +327,35 @@ power_flow_constraint_init = [
 
 power_flow_constraint_lower_limit = [
     m.addConstrs(
-        -nodes.get_capacity(n, to_node)
+        - nodes.get_capacity(n, to_node)
         <= nodes.get_susceptances(n, to_node)
-        * (voltage_angle[t, n - 1] - voltage_angle[t, to_node - 1])
+        * (voltage_angle[t, n] - voltage_angle[t, to_node])
         for to_node in nodes.get_to_node(n)
     )
-    for n in range(nbNode + 1)
+    for n in range(nbNode)
     for t in range(nbHour)
 ]
 power_flow_constraint_upper_limit = [
     m.addConstrs(
         nodes.get_susceptances(n, to_node)
-        * (voltage_angle[t, n - 1] - voltage_angle[t, to_node - 1])
+        * (voltage_angle[t, n] - voltage_angle[t, to_node])
         <= nodes.get_capacity(n, to_node)
         for to_node in nodes.get_to_node(n)
     )
-    for n in range(1, nbNode + 1)
+    for n in range(nbNode)
     for t in range(nbHour)
 ]
-
-m.addConstr(voltage_angle[t, 0] == 0)
+for t in range(nbHour):
+    m.addConstr(voltage_angle[t, 0] == 0)
 
 
 m.optimize()
 
-################################################################################
-# Results
-################################################################################
+for node_id in range(nbNode):
 
-clearing_price = [balance_constraint[t].Pi for t in range(nbHour)]
-clearing_price_values = [
-    price_item.flatten()[0] for price_item in clearing_price
-]  # remove the array values
-
-profit = [
-    [
-        production[t][g].X * (clearing_price[t] - generation_units.units[g]["Cost"])
-        for g in range(nbUnits)
-    ]
-    for t in range(nbHour)
-]
-
-demand_unsatisfied = [
-    total_needed_demand[t] - np.sum(demand_supplied[t][l].X for l in range(nbLoadUnits))
-    for t in range(nbHour)
-]
-
-results = pd.DataFrame()
-results["Hour"] = np.arange(nbHour)
-for g in range(nbUnits):
-    results[f"PU production {g+1} (GW)"] = [production[t][g].X for t in range(nbHour)]
-    results[f"PU profit {g+1} ($)"] = [profit[t][g] for t in range(nbHour)]
-results["Clearing price"] = clearing_price_values
-results["Demand"] = total_needed_demand
-results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
-results["Demand unsatisfied"] = demand_unsatisfied
-results["Battery production"] = power_injected.X-power_drawn.X
-results["State of charge"] = state_of_charge.X / max_SoC
-results["Battery profit"] = - results["Clearing price"] * results["Battery production"]
-
-from scripts.plot_results import plot_results, plot_nodes
-
-plot_results(nbUnits=nbUnits, results=results)
-# plot_nodes(nodes=nodes)
+    print(f"Node {node_id}")
+    for t in range(nbHour):
+        
+        constraint = balance_constraint[node_id][t]
+        print(f"     {t}:",constraint.Pi)
+    print("\n")
