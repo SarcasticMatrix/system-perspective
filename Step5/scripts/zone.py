@@ -4,7 +4,6 @@ from scripts.generationUnits import GenerationUnits
 
 
 class Zone:
-
     """
     Represents all the nodes within a zone in a power system network.
     Attributes :
@@ -36,7 +35,7 @@ class Zone:
         Retrieve the list of the Ids of the loads of the zone
         """
         return [load["Id"] for load in self.load_units.units]
-    
+
     def get_id_generators(self):
         """
         Retrieve the list of the Ids of the generators of the zone

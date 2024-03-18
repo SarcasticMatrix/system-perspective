@@ -178,7 +178,7 @@ for id_node in range(1, nbNode + 1):
 
 from scripts.zone import Zone
 
-node_ids_zone1 = [3, 14, 15, 16, 17, 18, 21, 22, 24] # Id of the nodes in zone 1
+node_ids_zone1 = [3, 14, 15, 16, 17, 18, 21, 22, 24]  # Id of the nodes in zone 1
 node_ids_zone2 = [6, 8, 10, 12, 13, 19, 20, 23]  # Id of the nodes in zone 2
 node_ids_zone3 = [1, 2, 4, 5, 7, 8, 9, 11]  # Id of the nodes in zone 3
 
@@ -213,13 +213,18 @@ zone3.add_transmission_lines()
 zone3.add_generation_units()
 zone3.add_load_units()
 
-zones=[zone1,zone2,zone3]
+zones = [zone1, zone2, zone3]
 for zoneZ in zones:
-    print(zoneZ)
     print(zoneZ.get_id_loads())
 
-# Sinon, réutiliser la Step2 pour chaque zone, puis gérer les transmissions entre chaque zone (normalement il suffit de faire que pour deux zones)
-# Si j'ai pas fait n'importe quoi, la structure des données est la même que dans la Step2. Au lieu d'appeler generation_units, load_units etc. il suffit d'appler zone1.generation_units etc.et pouf ça fait ces chocopics
+max_capacity_12 = zone1.compute_max_capacity_between_zones(zone2)
+max_capacity_21 = max_capacity_12
+
+max_capacity_23 = zone2.compute_max_capacity_between_zones(zone3)
+max_capacity_32 = max_capacity_23
+
+max_capacity_31 = zone3.compute_max_capacity_between_zones(zone1)
+max_capacity_13 = max_capacity_31
 
 ################################################################################
 # Adding of the battery
@@ -259,18 +264,23 @@ power_injected_drawn = m.addMVar(
     vtype=GRB.CONTINUOUS,
 )
 flow_interzonal = m.addMVar(
-    shape=(nbHour, len(zones), len(zones)-1), name=f"flow_interzonal", vtype=GRB.CONTINUOUS
+    shape=(nbHour, len(zones), len(zones) - 1),
+    name=f"flow_interzonal",
+    vtype=GRB.CONTINUOUS,
 )
 
 # Objective function
-objective = gp.quicksum(sum(
-    demand_supplied[t, l] * zoneZ.load_units.units[l]["Bid price"]
-    for l in range(len(zoneZ.get_id_loads())))
+objective = gp.quicksum(
+    sum(
+        demand_supplied[t, l] * zoneZ.load_units.units[l]["Bid price"]
+        for l in range(len(zoneZ.get_id_loads()))
+    )
     for t in range(nbHour)
     for zoneZ in zones
-) - gp.quicksum(sum(
-    production[t, g] * zoneZ.generation_units.units[g]["Cost"]
-    for g in range(len(zoneZ.get_id_generators()))
+) - gp.quicksum(
+    sum(
+        production[t, g] * zoneZ.generation_units.units[g]["Cost"]
+        for g in range(len(zoneZ.get_id_generators()))
     )
     for t in range(nbHour)
     for zoneZ in zones
@@ -294,8 +304,7 @@ max_prod_constraint = [
 
 # Cannot supply more than necessary
 max_demand_supplied_constraint = [
-    m.addConstr(demand_supplied[t, l] <= zoneZ.load_units.units[l]["Needed demand"][t]
-    )
+    m.addConstr(demand_supplied[t, l] <= zoneZ.load_units.units[l]["Needed demand"][t])
     for t in range(nbHour)
     for zoneZ in zones
     for l in range(len(zoneZ.get_id_loads()))
@@ -306,12 +315,12 @@ balance_constraint = [
     m.addConstr(
         sum(demand_supplied[t, l] for l in range(len(zoneZ.get_id_loads())))
         - gp.quicksum(production[t, g] for g in range(len(zoneZ.get_id_generators())))
-        + power_injected_drawn[t]*(zoneZ == zone3)
-        +sum(flow_interzonal[t, z, notzoneZ] for notzoneZ in range(len(zones)-1))
+        + power_injected_drawn[t] * (zoneZ == zone3)
+        + sum(flow_interzonal[t, z, notzoneZ] for notzoneZ in range(len(zones) - 1))
         == 0,
         name=f"GenerationBalance_{t+1}",
     )
-    for z, zoneZ in zip(range(len(zones)),zones) 
+    for z, zoneZ in zip(range(len(zones)), zones)
     for t in range(nbHour)
 ]
 
@@ -320,7 +329,7 @@ ramp_up_constraint = []
 ramp_down_constraint = []
 for zoneZ in zones:
     for g in range(len(zoneZ.get_id_generators())):
-        for t in range(nbHour):      
+        for t in range(nbHour):
             if t == 0:  # Apply the special condition for t=0
                 ramp_up_constraint.append(
                     m.addConstr(
@@ -340,13 +349,15 @@ for zoneZ in zones:
                 ramp_up_constraint.append(
                     m.addConstr(
                         production[t, g]
-                        <= production[t - 1, g] + zoneZ.generation_units.units[g]["Ramp up"],
+                        <= production[t - 1, g]
+                        + zoneZ.generation_units.units[g]["Ramp up"],
                     )
                 )
                 ramp_down_constraint.append(
                     m.addConstr(
                         production[t, g]
-                        >= production[t - 1, g] - zoneZ.generation_units.units[g]["Ramp down"],
+                        >= production[t - 1, g]
+                        - zoneZ.generation_units.units[g]["Ramp down"],
                     )
                 )
 
@@ -420,6 +431,6 @@ results["Battery production"] = power_injected_drawn.X
 results["State of charge"] = state_of_charge.X / max_SoC
 results["Battery profit"] = results["Clearing price"] * results["Battery production"]
 
-from plot_results import plot_results
+from scripts.plot_results import plot_results
 
 plot_results(nbUnits=nbUnits, results=results)

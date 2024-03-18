@@ -213,7 +213,7 @@ zone3.add_transmission_lines()
 zone3.add_generation_units()
 zone3.add_load_units()
 
-zones=[zone1,zone2,zone3]
+zones = [zone1, zone2, zone3]
 for zoneZ in zones:
     print(zoneZ)
     print(zoneZ.get_id_loads())
@@ -259,18 +259,23 @@ power_injected_drawn = m.addMVar(
     vtype=GRB.CONTINUOUS,
 )
 flow_interzonal = m.addMVar(
-    shape=(nbHour, len(zones), len(zones)-1), name=f"flow_interzonal", vtype=GRB.CONTINUOUS
+    shape=(nbHour, len(zones), len(zones) - 1),
+    name=f"flow_interzonal",
+    vtype=GRB.CONTINUOUS,
 )
 
 # Objective function
-objective = gp.quicksum(sum(
-    demand_supplied[t, l] * zoneZ.load_units.units[l]["Bid price"]
-    for l in range(len(zoneZ.get_id_loads())))
+objective = gp.quicksum(
+    sum(
+        demand_supplied[t, l] * zoneZ.load_units.units[l]["Bid price"]
+        for l in range(len(zoneZ.get_id_loads()))
+    )
     for t in range(nbHour)
     for zoneZ in zones
-) - gp.quicksum(sum(
-    production[t, g] * zoneZ.generation_units.units[g]["Cost"]
-    for g in range(len(zoneZ.get_id_generators()))
+) - gp.quicksum(
+    sum(
+        production[t, g] * zoneZ.generation_units.units[g]["Cost"]
+        for g in range(len(zoneZ.get_id_generators()))
     )
     for t in range(nbHour)
     for zoneZ in zones
@@ -294,8 +299,7 @@ max_prod_constraint = [
 
 # Cannot supply more than necessary
 max_demand_supplied_constraint = [
-    m.addConstr(demand_supplied[t, l] <= zoneZ.load_units.units[l]["Needed demand"][t]
-    )
+    m.addConstr(demand_supplied[t, l] <= zoneZ.load_units.units[l]["Needed demand"][t])
     for t in range(nbHour)
     for zoneZ in zones
     for l in range(len(zoneZ.get_id_loads()))
@@ -306,12 +310,12 @@ balance_constraint = [
     m.addConstr(
         sum(demand_supplied[t, l] for l in range(len(zoneZ.get_id_loads())))
         - gp.quicksum(production[t, g] for g in range(len(zoneZ.get_id_generators())))
-        + power_injected_drawn[t]*(zoneZ == zone3)
-        +sum(flow_interzonal[t, z, notzoneZ] for notzoneZ in range(len(zones)-1))
+        + power_injected_drawn[t] * (zoneZ == zone3)
+        + sum(flow_interzonal[t, z, notzoneZ] for notzoneZ in range(len(zones) - 1))
         == 0,
         name=f"GenerationBalance_{t+1}",
     )
-    for z, zoneZ in zip(range(len(zones)),zones) 
+    for z, zoneZ in zip(range(len(zones)), zones)
     for t in range(nbHour)
 ]
 
@@ -320,7 +324,7 @@ ramp_up_constraint = []
 ramp_down_constraint = []
 for zoneZ in zones:
     for g in range(len(zoneZ.get_id_generators())):
-        for t in range(nbHour):      
+        for t in range(nbHour):
             if t == 0:  # Apply the special condition for t=0
                 ramp_up_constraint.append(
                     m.addConstr(
@@ -340,13 +344,15 @@ for zoneZ in zones:
                 ramp_up_constraint.append(
                     m.addConstr(
                         production[t, g]
-                        <= production[t - 1, g] + zoneZ.generation_units.units[g]["Ramp up"],
+                        <= production[t - 1, g]
+                        + zoneZ.generation_units.units[g]["Ramp up"],
                     )
                 )
                 ramp_down_constraint.append(
                     m.addConstr(
                         production[t, g]
-                        >= production[t - 1, g] - zoneZ.generation_units.units[g]["Ramp down"],
+                        >= production[t - 1, g]
+                        - zoneZ.generation_units.units[g]["Ramp down"],
                     )
                 )
 

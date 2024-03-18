@@ -4,7 +4,6 @@ from scripts.generationUnits import GenerationUnits
 
 
 class Zone:
-
     """
     Represents all the nodes within a zone in a power system network.
     Attributes :
@@ -36,7 +35,7 @@ class Zone:
         Retrieve the list of the Ids of the loads of the zone
         """
         return [load["Id"] for load in self.load_units.units]
-    
+
     def get_id_generators(self):
         """
         Retrieve the list of the Ids of the generators of the zone
@@ -60,7 +59,8 @@ class Zone:
 
             for to_id in to_ids:
                 if to_id not in zone_id_nodes:
-                    self.transmission_lines.append(node["Transmission line"])
+                    for transmission_line in node["Transmission line"]:
+                        self.transmission_lines.append(transmission_line)
 
     def add_generation_units(self):
         """
@@ -81,3 +81,20 @@ class Zone:
         for node in self.nodes.nodes:
             for unit in node["Load units"].units:
                 self.load_units.add_constructed_unit(unit)
+
+    def compute_capacity_between_zones(self, to_zone):
+        """
+        Return the maximum capactiy between two zones.
+
+        Inputs: the other zone
+        """
+
+        max_capacity = 0
+        for transmission_line in self.transmission_lines:
+            for to_transmission_line in to_zone.transmission_lines:
+
+                # Select a transmission line between two distinct zones
+                if transmission_line.to_node == to_transmission_line.from_node:
+                    max_capacity += transmission_line.capacity
+
+        return max_capacity

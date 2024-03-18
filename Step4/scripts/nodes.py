@@ -2,6 +2,7 @@ from scripts.generationUnits import GenerationUnits
 from scripts.loadUnits import LoadUnits
 from scripts.generationUnits import GenerationUnits
 
+
 class Nodes:
     """
     Represents the nodes within a power system network.
