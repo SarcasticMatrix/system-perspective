@@ -2,6 +2,15 @@ import pandas as pd
 import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
+# import sys
+# sys.path.append('../')  # Add the parent folder to the system path
+import os
+try:
+    os.chdir('..')
+except:
+    pass
+
+from Step2.step2 import step2_multiple_hours  
 
 # cd C:\Users\julia\OneDrive\DTU\course\S2\46755 - Renewables in Electricity Markets\Assignment1 - git
 
@@ -20,13 +29,11 @@ pmax = generationUnits_parameters["Pmax"].values
 pmin = generationUnits_parameters["Pmin"].values
 Csu = generationUnits_parameters["Csu"].values  # Start-up cost
 Uini = generationUnits_parameters["Uini"].values  # Initial state (1 if on, 0 else)
-ramp_up = generationUnits_parameters[
-    "RU"
-].values  # Maximum augmentation of production (ramp-up)
-ramp_down = generationUnits_parameters[
-    "RD"
-].values  # Maximum decrease of production (ramp-up)
+ramp_up = generationUnits_parameters["RU"].values  # Maximum augmentation of production (ramp-up)
+ramp_down = generationUnits_parameters["RD"].values  # Maximum decrease of production (ramp-up)
 prod_init = generationUnits_parameters["Pini"].values  # Initial production
+up_reserve = generationUnits_parameters["R+"].values # Up reserve capacity 
+down_reserve = generationUnits_parameters["R-"].values # Down reserve capacity
 
 generation_units = GenerationUnits()
 nbUnitsConventionnal = generationUnits_parameters.shape[0]
@@ -42,6 +49,8 @@ for unit_id in range(nbUnitsConventionnal):
         ramp_up=ramp_up[unit_id],
         ramp_down=ramp_down[unit_id],
         prod_init=prod_init[unit_id],
+        up_reserve=up_reserve[unit_id],
+        down_reserve=down_reserve[unit_id],
     )
 
 ################################################################################
@@ -75,6 +84,8 @@ for unit_id in range(nbUnitsWind):
         ramp_up=10000,  # big M, for no constraint on rampu_up
         ramp_down=0,
         prod_init=0,
+        up_reserve=0,
+        down_reserve=0,
     )
 
 generation_units.export_to_json()
@@ -112,188 +123,93 @@ load_units.export_to_json()
 
 
 ################################################################################
-# Adding of the battery
+# Balancing bids
 ################################################################################
-efficiency = np.sqrt(0.937)
-min_SoC = 0  # minimum of state of charge
-max_SoC = 600  # MWh maximum of state of charge = battery capacity
-value_init = max_SoC / 2
-P_max = 150  # MW
-delta_t = 1  # hour
+load_curtailment_cost = 400 # Demand curtailment cost: 400$/MWh
+coef_up_regulation = 0.1
+coef_down_regulation = 0.13
+
 
 ################################################################################
 # Model
 ################################################################################
 
-m = gp.Model()
+def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind_production:dict= {'W1':-0.1,'W2':0.15,'W3':-0.1,'W4':0.15,'W5':-0.1,'W6':-0.1},show_plots:bool=False):
+    ############################################################################
+    # Day-ahead market clearing
+    ############################################################################
 
-# Variables
-production = m.addMVar(
-    shape=(nbHour, nbUnits), lb=0, name="power_generation", vtype=GRB.CONTINUOUS
-)
-demand_supplied = m.addMVar(
-    shape=(nbHour, nbLoadUnits), lb=0, name=f"demand_supplied", vtype=GRB.CONTINUOUS
-)
-state_of_charge = m.addMVar(
-    shape=(nbHour,),
-    lb=min_SoC,
-    ub=max_SoC,
-    name=f"state_of_charge",
-    vtype=GRB.CONTINUOUS,
-)
-power_injected = m.addMVar(
-    shape=(nbHour,),
-    lb=0,
-    ub=P_max,
-    name=f"power_injected",
-    vtype=GRB.CONTINUOUS,
-)
-power_drawn = m.addMVar(
-    shape=(nbHour,),
-    lb=0,
-    ub=P_max,
-    name=f"power_drawn",
-    vtype=GRB.CONTINUOUS,
-)
+    day_ahead_model = step2_multiple_hours(show_plots=False)
 
-# Objective function
-objective = gp.quicksum(
-    demand_supplied[t, l] * load_units.units[l]["Bid price"]
-    for t in range(nbHour)
-    for l in range(nbLoadUnits)
-)  - gp.quicksum(
-    production[t, g] * generation_units.units[g]["Cost"]
-    for t in range(nbHour)
-    for g in range(nbUnits)
-) 
-m.setObjective(objective, GRB.MAXIMIZE)
+    production = day_ahead_model.getVarByName('power_generation').X
+    demand_supplied = day_ahead_model.getVarByName('demand_supplied').X
+    battery_storage = day_ahead_model.getVarByName('power_drawn').X
+    battery_injected = day_ahead_model.getVarByName('power_injected').X
 
-# Constraints
+    ############################################################################
+    # Balancing market clearing
+    ############################################################################
+    t = hour # Choose one hour for the balancing market clearing 
 
-# generation unitsPhave a _max
-max_prod_constraint = [
-    m.addConstr(
-        production[t, g]
-        <= generation_units.units[g]["PMAX"]
-        * generation_units.units[g]["Availability"][t]
+    # Calculate the balancing need
+    optimal_production = {g: production[t][g].X for g in range(nbUnits)} # Optimal production in the day-ahead market clearing
+    optimal_demand = {l: demand_supplied[t][l].x for l in range(nbLoadUnits)} # Optimal supplied demand in the day-ahead market clearing
+
+    delta_total_power = sum(optimal_production[w]*delta_wind_production[w] for w in range(nbUnitsConventionnal, nbUnits)) - sum(optimal_production[g] for g in outaged_generators) # Lack/Surplus of power compared to day-ahead decision
+    balancing_need = - delta_total_power # The balancing need is the opposite of the surplus or lack of power
+
+    # Balancing biding
+    balance_constraint = day_ahead_model.getConstrByName(f'GenerationBalance_{t}')
+    uniform_price = balance_constraint.Pi
+
+    price_up_regulation = {g: uniform_price + generation_units.units[g]["Cost"]*0.1 for g in range(nbUnits) if g not in outaged_generators} # Conventional generators up-regulation price
+    price_down_regulation = {g: uniform_price - generation_units.units[g]["Cost"]*0.13 for g in range(nbUnits) if g not in outaged_generators} # Conventional generators down-regulation price
+
+    # Optimisation
+    m = gp.Model()
+
+    #variables
+    up_production =  {g: m.addVar(
+        lb=0, 
+        ub=min(generation_units.units[g]["PMAX"] - optimal_production[g], generation_units.units[g]["up reserve"]), #  Upper bound is the minimum between the up reserve capacity and the remaining power before reaching the generator's capacity
+        name=f'up production of generator {g}',
+        vtype=GRB.CONTINUOUS,        
+        )
+        for g in range(nbUnits) if g not in outaged_generators
+    }     
+    down_production =  {g: m.addVar(
+        lb=0, 
+        ub=min(generation_units.units[g]["PMAX"] - optimal_production[g], generation_units.units[g]["down reserve"]), # Upper bound is the minimum between the down reserve capacity and the production of the day-ahead clearing
+        name=f'down production of generator {g}',
+        vtype=GRB.CONTINUOUS,        
+        )
+        for g in range(nbUnits) if g not in outaged_generators
+    }  
+    down_demand = {g: m.addVar( # Down-regulation load. 
+        lb=0, 
+        ub=optimal_demand[l], # Upper bound is the demand supplied after day-ahead clearing
+        name=f'down production of generator {l}',
+        vtype=GRB.CONTINUOUS,        
+        )
+        for l in range(nbLoadUnits)
+    }  
+    
+    # Objective function
+    objective = gp.quicksum(
+        up_production[g] * price_up_regulation[g] - down_production[g] * price_down_regulation[g] for g in range(nbUnits) if g not in outaged_generators
+    ) + gp.quicksum(
+        load_curtailment_cost * down_demand[l] for l in range(nbLoadUnits)
     )
-    for g in range(nbUnits)
-    for t in range(nbHour)
-]
-
-# Cannot supply more than necessary
-demand_supplied_constraint = [
-    m.addConstr(demand_supplied[t, l] <= load_units.units[l]["Needed demand"][t])
-    for l in range(nbLoadUnits)
-    for t in range(nbHour)
-]
-
-# Supplied demand match generation
-balance_constraint = [
-    m.addConstr(
-        sum(demand_supplied[t, l] for l in range(nbLoadUnits)) + power_drawn[t]
-        - gp.quicksum(production[t, g] for g in range(nbUnits)) - power_injected[t] 
-        == 0,
-        name=f"GenerationBalance_{t+1}",
-    )
-    for t in range(nbHour)
-]
-
-# Ramp-up and ramp-down constraint
-ramp_up_constraint = []
-ramp_down_constraint = []
-for g in range(nbUnits):
-    for t in range(nbHour):
-        if t == 0:  # Apply the special condition for t=0
-            ramp_up_constraint.append(
-                m.addConstr(
-                    production[t, g]
-                    <= generation_units.units[g]["Initial production"]
-                    + generation_units.units[g]["Ramp up"],
-                )
-            )
-            ramp_down_constraint.append(
-                m.addConstr(
-                    production[t, g]
-                    >= generation_units.units[g]["Initial production"]
-                    - generation_units.units[g]["Ramp down"],
-                )
-            )
-        else:  # Apply the regular ramp-down constraint for t>0
-            ramp_up_constraint.append(
-                m.addConstr(
-                    production[t, g]
-                    <= production[t - 1, g] + generation_units.units[g]["Ramp up"],
-                )
-            )
-            ramp_down_constraint.append(
-                m.addConstr(
-                    production[t, g]
-                    >= production[t - 1, g] - generation_units.units[g]["Ramp down"],
-                )
-            )
-
-# Battery constraints
-actualise_SoC = [
-    m.addConstr(
-        state_of_charge[t]
-        == state_of_charge[t-1] + (- power_injected[t]/efficiency  + power_drawn[t]*efficiency)* delta_t
-    )
-    for t in range(1,nbHour)
-]
-m.addConstr(state_of_charge[0] == value_init )# - (power_injected[0]/efficiency  - power_drawn[0]*efficiency))
-m.addConstr(value_init - state_of_charge[-1] <= 0)
-
-
-m.optimize()
-
-################################################################################
-# Results
-################################################################################
-
-clearing_price = [balance_constraint[t].Pi for t in range(nbHour)]
-clearing_price_values = [
-    price_item.flatten()[0] for price_item in clearing_price
-]  # remove the array values
-
-profit = [
-    [
-        production[t][g].X * (clearing_price[t] - generation_units.units[g]["Cost"])
-        for g in range(nbUnits)
-    ]
-    for t in range(nbHour)
-]
-
-demand_unsatisfied = [
-    total_needed_demand[t] - np.sum(demand_supplied[t][l].X for l in range(nbLoadUnits))
-    for t in range(nbHour)
-]
-
-# print result
-# print(f"Optimal objective value: {m.objVal} $")
-# for t in range(nbHour):
-#     for g in range(nbUnits):
-#         print(
-#             f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
-#         )
-#     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
-# print("clearing price:", clearing_price_values)
-# print("demand unsatisfied:", demand_unsatisfied)
-# print("SoC:", state_of_charge.X)
-
-results = pd.DataFrame()
-results["Hour"] = np.arange(nbHour)
-for g in range(nbUnits):
-    results[f"PU production {g+1} (GW)"] = [production[t][g].X for t in range(nbHour)]
-    results[f"PU profit {g+1} ($)"] = [profit[t][g] for t in range(nbHour)]
-results["Clearing price"] = clearing_price_values
-results["Demand"] = total_needed_demand
-results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
-results["Demand unsatisfied"] = demand_unsatisfied
-results["Battery production"] = - power_injected.X + power_drawn.X
-results["State of charge"] = state_of_charge.X / max_SoC
-results["Battery profit"] = -results["Clearing price"] * results["Battery production"]
-
-from plot_results import plot_results
-
-plot_results(nbUnits=nbUnits, results=results)
+    m.setObjective(objective, GRB.MINIMIZE)
+    
+    # Constraints
+    balancing_need_constraint = m.addLConstr(
+        gp.quicksum( up_production[g] - down_production[g] for g in range(nbUnits) if g not in outaged_generators) 
+        + gp.quicksum(down_demand[l] for l in range(nbLoadUnits))
+        == balancing_need,
+        name='Balancing need constraint'
+    ) 
+    
+    # Optimise
+    m.optimize()
+    

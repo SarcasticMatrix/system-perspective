@@ -225,14 +225,15 @@ voltage_angle = m.addMVar(
 )
 
 # Objective function
-objective = sum(
+objective = gp.quicksum(
+gp.quicksum(
     demand_supplied[t, l] * load_units.units[l]["Bid price"]
-    for t in range(nbHour)
     for l in range(nbLoadUnits)
-) - sum(
+) - gp.quicksum(
     production[t, g] * generation_units.units[g]["Cost"]
-    for t in range(nbHour)
     for g in range(nbUnits)
+)
+for t in range(nbHour)
 )
 m.setObjective(objective, GRB.MAXIMIZE)
 
@@ -264,7 +265,7 @@ for n in range(nbNode):
             sum(demand_supplied[t, l] for l in nodes.get_ids_load(n))
             - sum(production[t, g] for g in nodes.get_ids_generation(n))
             + (power_drawn[t] - power_injected[t]) * (n == (7 - 1))
-            - sum(
+            + sum(
                 nodes.get_susceptances(n, to_node)
                 * (voltage_angle[t, n] - voltage_angle[t, to_node])
                 for to_node in nodes.get_to_node(n)
@@ -313,7 +314,7 @@ for g in range(nbUnits):
 actualise_SoC = [
     m.addConstr(
         state_of_charge[t]
-        == state_of_charge[t-1] + (- power_injected[t]/efficiency  + power_drawn[t]*efficiency)* delta_t
+        == state_of_charge[t-1] + (power_drawn[t]*efficiency - power_injected[t]/efficiency )* delta_t
     )
     for t in range(1,nbHour)
 ]
@@ -321,6 +322,7 @@ m.addConstr(state_of_charge[0] == value_init - (power_injected[0]/efficiency  - 
 m.addConstr(value_init - state_of_charge[-1] <= 0)
 
 # Node constraints
+#Reference angle at bus 0 is equal to 0
 power_flow_constraint_init = [
     m.addConstr(voltage_angle[t, 0] == 0) for t in range(nbHour)
 ]

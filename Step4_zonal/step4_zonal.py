@@ -182,6 +182,7 @@ node_ids_zone1 = [3, 14, 15, 16, 17, 18, 21, 22, 24]  # Id of the nodes in zone 
 node_ids_zone2 = [6, 8, 10, 12, 13, 19, 20, 23]  # Id of the nodes in zone 2
 node_ids_zone3 = [1, 2, 4, 5, 7, 8, 9, 11]  # Id of the nodes in zone 3
 
+# zones_nodes = {'Z1': [1, 2, 3, 4, 5, 6, 7, 8, 24], 'Z2': [9, 10, 11, 12, 13, 14, 15], 'Z3': [16, 17, 18, 19, 20, 21, 22, 23]}
 
 zone1 = Zone()
 zone2 = Zone()
@@ -214,8 +215,8 @@ zone3.add_generation_units()
 zone3.add_load_units()
 
 zones = [zone1, zone2, zone3]
-for zoneZ in zones:
-    print(zoneZ.get_id_loads())
+for ZONE in zones:
+    print(ZONE.get_id_loads())
 
 max_capacity_12 = zone1.compute_capacity_between_zones(zone2)
 max_capacity_21 = max_capacity_12
@@ -271,26 +272,26 @@ power_drawn = m.addMVar(
     vtype=GRB.CONTINUOUS,
 )
 flow_interzonal = m.addMVar(
-    shape=(nbHour, len(zones), len(zones) - 1),
+    shape=(nbHour, len(zones), len(zones)),
     name=f"flow_interzonal",
     vtype=GRB.CONTINUOUS,
 )
 
 # Objective function
 objective = gp.quicksum(
-    sum(
-        demand_supplied[t, l] * zoneZ.load_units.units[l]["Bid price"]
-        for l in range(len(zoneZ.get_id_loads()))
+    gp.quicksum( gp.quicksum(
+        demand_supplied[t, l] * zone.load_units.units[l]["Bid price"]
+        for l in range(len(zone.get_id_loads()))
     )
-    for t in range(nbHour)
-    for zoneZ in zones
-) - gp.quicksum(
+    for zone in zones) 
+- gp.quicksum(
     sum(
-        production[t, g] * zoneZ.generation_units.units[g]["Cost"]
-        for g in range(len(zoneZ.get_id_generators()))
+        production[t, g] * zone.generation_units.units[g]["Cost"]
+        for g in range(len(zone.get_id_generators()))
     )
-    for t in range(nbHour)
-    for zoneZ in zones
+    for zone in zones
+)
+for t in range(nbHour)
 )
 m.setObjective(objective, GRB.MAXIMIZE)
 
@@ -300,36 +301,38 @@ m.setObjective(objective, GRB.MAXIMIZE)
 max_prod_constraint = [
     m.addConstr(
         production[t, g]
-        <= zoneZ.generation_units.units[g]["PMAX"]
-        * zoneZ.generation_units.units[g]["Availability"][t]
+        <= zone.generation_units.units[g]["PMAX"]
+        * zone.generation_units.units[g]["Availability"][t]
     )
     for t in range(nbHour)
-    for zoneZ in zones
-    for g in range(len(zoneZ.get_id_generators()))
+    for zone in zones
+    for g in range(len(zone.get_id_generators()))
 ]
 
 
 # Cannot supply more than necessary
 max_demand_supplied_constraint = [
-    m.addConstr(demand_supplied[t, l] <= zoneZ.load_units.units[l]["Needed demand"][t])
+    m.addConstr(demand_supplied[t, l] <= zone.load_units.units[l]["Needed demand"][t])
     for t in range(nbHour)
-    for zoneZ in zones
-    for l in range(len(zoneZ.get_id_loads()))
+    for zone in zones
+    for l in range(len(zone.get_id_loads()))
 ]
 
 # Supplied demand match generation
-balance_constraint = [
-    m.addConstr(
-        sum(demand_supplied[t, l] for l in range(len(zoneZ.get_id_loads())))
-        - gp.quicksum(production[t, g] for g in range(len(zoneZ.get_id_generators())))
-        - (power_injected[t] - power_drawn[t]) * (zoneZ == zone3)
-        + sum(flow_interzonal[t, z, notzoneZ] for notzoneZ in range(len(zones) - 1))
-        == 0,
-        name=f"GenerationBalance_{t+1}",
-    )
-    for z, zoneZ in zip(range(len(zones)), zones)
-    for t in range(nbHour)
-]
+balance_constraint = []
+for z, zone in zip(range(len(zones)), zones):
+    liste = []
+    for t in range(nbHour):
+        constraint = m.addConstr(
+        sum(demand_supplied[t, l] for l in range(len(zone.get_id_loads())))
+        - gp.quicksum(production[t, g] for g in range(len(zone.get_id_generators())))
+        - (power_injected[t] - power_drawn[t]) * (zone == zone3)
+        + sum(flow_interzonal[t, z, notzone] for notzone in range(len(zones)) if zone != zones[notzone])
+        == 0
+        )
+        liste.append(constraint)
+    balance_constraint.append(liste)
+
 print(len(balance_constraint))
 
 # Ramp-up and ramp-down constraint
@@ -382,14 +385,16 @@ m.addConstr(value_init - state_of_charge[-1] <= 0)
 
 # Flow between zone constraints
 
-for z, zoneZ in zip(range(len(zones)), zones):
-    for notz, notzoneZ in zip(range(len(zones)-1), zones):
-        if zoneZ != notzoneZ:
+for z, zone_z in zip(range(len(zones)), zones):
+    for notz, notzone_z in zip(range(len(zones)), zones):
+        if zoneZ != notzone_z:
             for t in range(nbHour):
-                m.addConstr(flow_interzonal[t, z, notz] <= zoneZ.compute_capacity_between_zones(notzoneZ))
-                m.addConstr(flow_interzonal[t, z, notz] >= - zoneZ.compute_capacity_between_zones(notzoneZ))
-
-
+                m.addConstr(flow_interzonal[t, z, notz] <= zone_z.compute_capacity_between_zones(notzone_z))
+                m.addConstr(flow_interzonal[t, z, notz] >= - zone_z.compute_capacity_between_zones(notzone_z))
+                m.addConstr(flow_interzonal[t, z, notz] == - flow_interzonal[t, notz, z])
+        # else:
+        #     for t in range(nbHour):
+        #         m.addConstr(flow_interzonal[t, z, notz] == 0)
 
 m.optimize()
 
@@ -397,49 +402,58 @@ m.optimize()
 # Results
 ################################################################################
 
-clearing_price = [balance_constraint[t].Pi for t in range(nbHour)]
-clearing_price_values = [
-    price_item.flatten()[0] for price_item in clearing_price
-]  # remove the array values
+for zone_id in range(len(zones)):
 
-profit = [
-    [
-        production[t][g].X * (clearing_price[t] - generation_units.units[g]["Cost"])
-        for g in range(nbUnits)
-    ]
-    for t in range(nbHour)
-]
+    print(f"Zone {zone_id}")
+    for t in range(nbHour):
+        
+        constraint = balance_constraint[zone_id][t]
+        print(f"     {t}:",constraint.Pi)
+    print("\n")
 
-demand_unsatisfied = [
-    total_needed_demand[t] - np.sum(demand_supplied[t][l].X for l in range(nbLoadUnits))
-    for t in range(nbHour)
-]
+# clearing_price = [balance_constraint[t].Pi for t in range(nbHour)]
+# clearing_price_values = [
+#     price_item.flatten()[0] for price_item in clearing_price
+# ]  # remove the array values
 
-# print result
-# print(f"Optimal objective value: {m.objVal} $")
-# for t in range(nbHour):
-#     for g in range(nbUnits):
-#         print(
-#             f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
-#         )
-#     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
-# print("clearing price:", clearing_price_values)
-# print("demand unsatisfied:", demand_unsatisfied)
-# print("SoC:", state_of_charge.X)
+# profit = [
+#     [
+#         production[t][g].X * (clearing_price[t] - generation_units.units[g]["Cost"])
+#         for g in range(nbUnits)
+#     ]
+#     for t in range(nbHour)
+# ]
 
-results = pd.DataFrame()
-results["Hour"] = np.arange(nbHour)
-for g in range(nbUnits):
-    results[f"PU production {g+1} (GW)"] = [production[t][g].X for t in range(nbHour)]
-    results[f"PU profit {g+1} ($)"] = [profit[t][g] for t in range(nbHour)]
-results["Clearing price"] = clearing_price_values
-results["Demand"] = total_needed_demand
-results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
-results["Demand unsatisfied"] = demand_unsatisfied
-results["Battery production"] = power_drawn.X - power_injected.X
-results["State of charge"] = state_of_charge.X / max_SoC
-results["Battery profit"] = - results["Clearing price"] * results["Battery production"]
+# demand_unsatisfied = [
+#     total_needed_demand[t] - np.sum(demand_supplied[t][l].X for l in range(nbLoadUnits))
+#     for t in range(nbHour)
+# ]
 
-from scripts.plot_results import plot_results
+# # print result
+# # print(f"Optimal objective value: {m.objVal} $")
+# # for t in range(nbHour):
+# #     for g in range(nbUnits):
+# #         print(
+# #             f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
+# #         )
+# #     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
+# # print("clearing price:", clearing_price_values)
+# # print("demand unsatisfied:", demand_unsatisfied)
+# # print("SoC:", state_of_charge.X)
 
-plot_results(nbUnits=nbUnits, results=results)
+# results = pd.DataFrame()
+# results["Hour"] = np.arange(nbHour)
+# for g in range(nbUnits):
+#     results[f"PU production {g+1} (GW)"] = [production[t][g].X for t in range(nbHour)]
+#     results[f"PU profit {g+1} ($)"] = [profit[t][g] for t in range(nbHour)]
+# results["Clearing price"] = clearing_price_values
+# results["Demand"] = total_needed_demand
+# results["Demand satisfied"] = total_needed_demand - demand_unsatisfied
+# results["Demand unsatisfied"] = demand_unsatisfied
+# results["Battery production"] = power_drawn.X - power_injected.X
+# results["State of charge"] = state_of_charge.X / max_SoC
+# results["Battery profit"] = - results["Clearing price"] * results["Battery production"]
+
+# from scripts.plot_results import plot_results
+
+# plot_results(nbUnits=nbUnits, results=results)
