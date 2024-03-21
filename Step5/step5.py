@@ -132,6 +132,7 @@ coef_down_regulation = 0.13
 # Model
 ################################################################################
 
+
 def step5_balancing_market(
         hour : int = 17,
         outaged_generators : list = [10],
@@ -140,9 +141,10 @@ def step5_balancing_market(
     ):
     ############################################################################
     # Day-ahead market clearing
-    ############################################################################
+    ############################################################################    
+    #Import of the model optimised for the day-ahead market from Step 2
+    day_ahead_model = step2_multiple_hours(show_plots=False)
 
-    day_ahead_model = step2_multiple_hours(show_plots=show_plots)
     print("model", day_ahead_model)
     production = {
         t:  {
@@ -198,7 +200,7 @@ def step5_balancing_market(
     }     
     down_production =  {g: m.addVar(
         lb=0, 
-        ub=min(generation_units.units[g]["PMAX"] - optimal_production[g], generation_units.units[g]["Down reserve"]), # Upper bound is the minimum between the down reserve capacity and the production of the day-ahead clearing
+        ub=min(optimal_production[g], generation_units.units[g]["Down reserve"]), # Upper bound is the minimum between the down reserve capacity and the production of the day-ahead clearing
         name=f'down production of generator {g}',
         vtype=GRB.CONTINUOUS,        
         )
@@ -229,6 +231,35 @@ def step5_balancing_market(
         name='Balancing need constraint'
     ) 
     
+    # Add constraints to the Gurobi model
+    total_up_reserve = {t: model1.addLConstr(
+                        sum(generator_up_reserve[g][t]
+                            for g in GENERATORS),
+                        gb.GRB.EQUAL,
+                        reserve_up_needed[t],
+                        name=f'Total up reserve at time {t}')
+                        for t in TIME}
+
+    total_down_reserve = {t: model1.addLConstr(
+        sum(generator_down_reserve[g][t] for g in GENERATORS),
+        gb.GRB.EQUAL,
+        reserve_down_needed[t],
+        name=f'Total down reserve at time {t}')
+        for t in TIME}
+
+
+    # up + down reserve can't exceed capacity.
+    # This is to make the day-ahead market feasible. 
+    maximum_reserve = {t: {g: model1.addLConstr(
+        generator_up_reserve[g][t] + generator_down_reserve[g][t],
+        gb.GRB.LESS_EQUAL,
+        generator_capacity[g],
+        name=f'Maximum reserve capacity at time {t} for generator {g}')
+        for g in GENERATORS}
+        for t in TIME}
+
+
+
     # Optimise
     m.optimize()
 

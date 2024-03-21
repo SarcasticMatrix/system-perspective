@@ -268,16 +268,16 @@ def step2_multiple_hours(show_plots:bool=False):
     ]
 
     # print result
-    # print(f"Optimal objective value: {m.objVal} $")
-    # for t in range(nbHour):
-    #     for g in range(nbUnits):
-    #         print(
-    #             f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
-    #         )
-    #     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
-    # print("clearing price:", clearing_price_values)
-    # print("demand unsatisfied:", demand_unsatisfied)
-    # print("SoC:", state_of_charge.X)
+    print(f"Optimal objective value: {m.objVal} $")
+    for t in range(nbHour):
+        for g in range(nbUnits):
+            print(
+                f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
+            )
+        print(f"clearing price for hour {t+1}:", clearing_price_values[t])
+    print("clearing price:", clearing_price_values)
+    print("demand unsatisfied:", demand_unsatisfied)
+    print("SoC:", state_of_charge.X)
 
     results = pd.DataFrame()
     results["Hour"] = np.arange(nbHour)
