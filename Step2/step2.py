@@ -297,5 +297,5 @@ def step2_multiple_hours(show_plots:bool=False):
 
     return m
 
-#step2_multiple_hours(show_plots=True)
+step2_multiple_hours(show_plots=True)
 

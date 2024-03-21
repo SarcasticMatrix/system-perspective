@@ -132,8 +132,11 @@ coef_down_regulation = 0.13
 # Model
 ################################################################################
 
+#Import of the model optimised for the day-ahead market from Step 2
+day_ahead_model = step2_multiple_hours(show_plots=False)
 
 def step5_balancing_market(
+        day_ahead_model : gp.Model = day_ahead_model,
         hour : int = 17,
         outaged_generators : list = [10],
         delta_wind_production : list = [-0.1,0.15,0.15,-0.1,-0.1,-0.1],
@@ -142,8 +145,6 @@ def step5_balancing_market(
     ############################################################################
     # Day-ahead market clearing
     ############################################################################    
-    #Import of the model optimised for the day-ahead market from Step 2
-    day_ahead_model = step2_multiple_hours(show_plots=False)
 
     print("model", day_ahead_model)
     production = {
@@ -231,35 +232,6 @@ def step5_balancing_market(
         name='Balancing need constraint'
     ) 
     
-    # Add constraints to the Gurobi model
-    total_up_reserve = {t: model1.addLConstr(
-                        sum(generator_up_reserve[g][t]
-                            for g in GENERATORS),
-                        gb.GRB.EQUAL,
-                        reserve_up_needed[t],
-                        name=f'Total up reserve at time {t}')
-                        for t in TIME}
-
-    total_down_reserve = {t: model1.addLConstr(
-        sum(generator_down_reserve[g][t] for g in GENERATORS),
-        gb.GRB.EQUAL,
-        reserve_down_needed[t],
-        name=f'Total down reserve at time {t}')
-        for t in TIME}
-
-
-    # up + down reserve can't exceed capacity.
-    # This is to make the day-ahead market feasible. 
-    maximum_reserve = {t: {g: model1.addLConstr(
-        generator_up_reserve[g][t] + generator_down_reserve[g][t],
-        gb.GRB.LESS_EQUAL,
-        generator_capacity[g],
-        name=f'Maximum reserve capacity at time {t} for generator {g}')
-        for g in GENERATORS}
-        for t in TIME}
-
-
-
     # Optimise
     m.optimize()
 
