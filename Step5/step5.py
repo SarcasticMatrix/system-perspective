@@ -52,8 +52,8 @@ for unit_id in range(nbUnitsConventionnal):
         prod_init=prod_init[unit_id],
         up_reserve=up_reserve[unit_id],
         down_reserve=down_reserve[unit_id],
-        up_regulation_offer=up_reserve_offer[unit_id],
-        down_regulation_offer=down_reserve_offer[unit_id],
+        up_reserve_offer=up_reserve_offer[unit_id],
+        down_reserve_offer=down_reserve_offer[unit_id],
     )
 
 ################################################################################
@@ -89,8 +89,8 @@ for unit_id in range(nbUnitsWind):
         prod_init=0,
         up_reserve=0,
         down_reserve=0,
-        up_regulation_offer=0,
-        down_regulation_offer=0,
+        up_reserve_offer=0,
+        down_reserve_offer=0,
     )
 
 #generation_units.export_to_json()

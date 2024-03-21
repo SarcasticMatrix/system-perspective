@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import gurobipy as gp
 from gurobipy import GRB
@@ -9,10 +10,6 @@ chemin_dossier_step2 = os.path.abspath(os.path.join(os.path.dirname(__file__), '
 sys.path.insert(0, chemin_dossier_step2)
 from step2 import step2_multiple_hours  
 
-# Import of step5.py function
-chemin_dossier_step5 = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Step5'))
-sys.path.insert(0, chemin_dossier_step2)
-from step5 import step5_balancing_market  
 
 ################################################################################
 # Creation of Conventionnal Generation Units
@@ -53,8 +50,8 @@ for unit_id in range(nbUnitsConventionnal):
         prod_init=prod_init[unit_id],
         up_reserve=up_reserve[unit_id],
         down_reserve=down_reserve[unit_id],
-        up_regulation_offer=up_reserve_offer[unit_id],
-        down_regulation_offer=down_reserve_offer[unit_id],
+        up_reserve_offer=up_reserve_offer[unit_id],
+        down_reserve_offer=down_reserve_offer[unit_id],
     )
 
 ################################################################################
@@ -90,8 +87,8 @@ for unit_id in range(nbUnitsWind):
         prod_init=0,
         up_reserve=0,
         down_reserve=0,
-        up_regulation_offer=0,
-        down_regulation_offer=0,
+        up_reserve_offer=0,
+        down_reserve_offer=0,
     )
 
 #generation_units.export_to_json()
@@ -230,8 +227,8 @@ def step6_reserve_market(
 
     # Variables
     production =  {t: {g: m.addVar(
-        lb=0, 
-        ub=generation_units.units[g]["PMAX"] * generation_units.units[g]["Availability"][t],  # generation unitsPhave a _max
+        lb=generator_down_reserve[t][g].x, 
+        ub=generation_units.units[g]["PMAX"] * generation_units.units[g]["Availability"][t] - generator_up_reserve[t][g].x,  
         name=f'production of generator {g} at time {t}',
         vtype=GRB.CONTINUOUS
         ) 
@@ -350,6 +347,11 @@ def step6_reserve_market(
         price_item.flatten()[0] for price_item in clearing_price
     ]  # remove the array values
 
+    # Print results
+    print('Social welfare reserve:', round(reserve_model.ObjVal, 2))
+    print('Social welfare day ahead:', round(m.ObjVal, 2))
+
+
     profit = [
         [
             production[t][g].X * (clearing_price[t] - generation_units.units[g]["Cost"])
@@ -390,6 +392,7 @@ def step6_reserve_market(
 
     if show_plots:
         plot_results(nbUnits=nbUnits, results=results)
+    
 
     return m
 
