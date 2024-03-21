@@ -127,10 +127,10 @@ delta_t = 1  # hour
 ################################################################################
 # Model
 ################################################################################
-
 def run_model(
         t:int,
-        state_of_charge_previous:float
+        previous_SoC:float,
+        previous_production: list = None
     ):
 
     m = gp.Model()
@@ -197,17 +197,17 @@ def run_model(
     #     # Regular ramp constraints for t > 0
     #     else:  
     #         m.addConstr(
-    #                 production[g] <= production[t - 1, g] + generation_units.get_ramp_up(g),
+    #                 production[g] <= previous_production[g] + generation_units.get_ramp_up(g),
     #                 f"ramp_up_{g}"
     #             )
     #         m.addConstr(
-    #                 production[g] >= production[t - 1, g] - generation_units.get_ramp_down(g),
+    #                 production[g] >= previous_production[g] - generation_units.get_ramp_down(g),
     #                 f"ramp_down_{g}"
     #             )
 
     # Battery constraints
     m.addConstr(
-        state_of_charge == state_of_charge_previous + (power_drawn*efficiency - power_injected/efficiency) * delta_t,
+        state_of_charge == previous_SoC + (power_drawn*efficiency - power_injected/efficiency) * delta_t,
         name=f"battery_SoC"
     )
     
@@ -239,13 +239,34 @@ def run_model(
 
     return m
 
+SoC = init_SoC
 for t in range(nbHour):
+    print("-"*60)
     print(f"\nHour {t}")
 
-    m = run_model(t, init_SoC) 
+    if t > 0:
+        m = run_model(
+            t=t, 
+            previous_SoC=SoC,
+            previous_production=power_generation
+        ) 
+    else:
+        m = run_model(
+            t=t, 
+            previous_SoC=SoC,
+        ) 
+    
     #print(m.display())
+
+    SoC = m.getVarByName("state_of_charge[0]").X
+    power_generation = []
     for node_id in range(nbNode):
+
         constraint = m.getConstrByName(f"balancing_{node_id}[0]")
-        price = constraint.Pi
-        print(f"Price node {node_id}: {price}")
-    init_SoC = m.getVarByName("state_of_charge[0]").X
+        price = round(constraint.Pi,2)
+
+        #generation = round(m.getVarByName(f"power_generation[{node_id}]").X,2)
+        #power_generation.append(generation)
+
+        print(f"Node {node_id}: ${price} - MWh ")
+
