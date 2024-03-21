@@ -19,6 +19,8 @@ class GenerationUnits:
         prod_init: float,
         up_reserve: float,
         down_reserve: float,
+        up_reserve_offer: float,
+        down_reserve_offer: float,
     ):
 
         unit = {
@@ -34,6 +36,8 @@ class GenerationUnits:
             "Initial production": prod_init,
             "Up reserve": up_reserve,
             "Down reserve": down_reserve,
+            "Up reserve offer": up_reserve_offer,
+            "Down reserve offer": down_reserve_offer,
             # "Production":
         }
 

@@ -1,9 +1,15 @@
+import numpy as np
 import pandas as pd
 import gurobipy as gp
-import numpy as np
 from gurobipy import GRB
+import sys
+import os
 
-# cd C:\Users\julia\OneDrive\DTU\course\S2\46755 - Renewables in Electricity Markets\Assignment1 - git
+# Import of step2.py function
+chemin_dossier_step2 = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Step2'))
+sys.path.insert(0, chemin_dossier_step2)
+from step2 import step2_multiple_hours  
+
 
 ################################################################################
 # Creation of Conventionnal Generation Units
@@ -129,19 +135,100 @@ value_init = max_SoC / 2 #Start with 50%
 P_max = 150  # MW
 delta_t = 1  # hour
 
+
+################################################################################
+# Balancing bids
+################################################################################
+load_curtailment_cost = 400 # Demand curtailment cost: 400$/MWh
+coef_up_regulation = 0.1
+coef_down_regulation = 0.13
+reserve_up_needed = {}
+reserve_down_needed = {}
+
+# For each hour, the upward reserve requirement in the reserve market is 15% and the downward reserve requirement is 10% of the total demand in the corresponding hour.
+for t in range(nbHour):
+    reserve_up_needed[t] = total_needed_demand[t]*0.15
+    reserve_down_needed[t] = total_needed_demand[t]*0.1
+
+
 ################################################################################
 # Model
 ################################################################################
 
 from scripts.plot_results import plot_results
 
-def step2_multiple_hours(show_plots:bool=False):
+def step6_reserve_market(
+        outaged_generators : list = [10],
+        delta_wind_production : list = [-0.1,0.15,0.15,-0.1,-0.1,-0.1],
+        show_plots : bool = False
+    ):
+    ############################################################################
+    # Reserve market clearing
+    ############################################################################  
+    reserve_model = gp.Model()
+
+    # Variables    
+    generator_up_reserve = {t: {g: reserve_model.addVar(
+        lb=0, 
+        ub=generation_units.units[g]["Up reserve"],
+        name=f'up reserve capacity of generator {g} at time {t}')
+        for g in range(nbUnits)}
+        for t in range(nbHour)
+    } 
+
+    generator_down_reserve = {t: {g: reserve_model.addVar(
+        lb=0, 
+        ub=generation_units.units[g]["Down reserve"],
+        name=f'down reserve capacity of generator {g} at time {t}')
+        for g in range(nbUnits)}
+        for t in range(nbHour)
+    } 
+
+    # Objective function
+    objective = gp.quicksum(
+        gp.quicksum(
+            generation_units.units[g]["Up reserve offer"]*generator_up_reserve[t][g] +
+            generation_units.units[g]["Down reserve offer"]*generator_down_reserve[t][g]
+            for g in range(nbUnits))
+        for t in range(nbHour))  
+
+    reserve_model.setObjective(objective, GRB.MINIMIZE)  # minimize reserve cost
+    
+    # Constraints
+    total_up_reserve = {t: reserve_model.addLConstr(
+        gp.quicksum(generator_up_reserve[t][g] for g in range(nbUnits))
+        == reserve_up_needed[t],
+        name=f'Total up reserve at time {t}')
+        for t in range(nbHour)
+    }
+    total_down_reserve = {t: reserve_model.addLConstr(
+        sum(generator_down_reserve[t][g] for g in range(nbUnits))
+        ==  reserve_down_needed[t],
+        name=f'Total down reserve at time {t}')
+        for t in range(nbHour)
+    }
+    # up + down reserve can't exceed capacity 
+    total_reserve = {t: {g: reserve_model.addLConstr(
+        generator_up_reserve[t][g] + generator_down_reserve[t][g]
+        <= generation_units.units[g]["PMAX"],
+        name=f'Maximum reserve capacity for generator {g} at time {t}')
+        for g in range(nbUnits)}
+        for t in range(nbHour)
+    }
+
+    # Clearing reserve market
+    reserve_model.optimize()
+
+    ############################################################################
+    # Day-ahead market clearing
+    ############################################################################   
+    
     m = gp.Model()
 
     # Variables
     production =  {t: {g: m.addVar(
-        lb=0, 
-        ub=generation_units.units[g]["PMAX"] * generation_units.units[g]["Availability"][t],  # generation unitsPhave a _max
+        lb=generator_down_reserve[t][g].x, 
+        ub=generation_units.units[g]["PMAX"] * generation_units.units[g]["Availability"][t] - generator_up_reserve[t][g].x,  
         name=f'production of generator {g} at time {t}',
         vtype=GRB.CONTINUOUS
         ) 
@@ -248,6 +335,7 @@ def step2_multiple_hours(show_plots:bool=False):
     m.addConstr(state_of_charge[0] == value_init )# - (power_injected[0]/efficiency  - power_drawn[0]*efficiency))
     m.addConstr(value_init - state_of_charge[-1] <= 0)
 
+
     m.optimize()
 
     ################################################################################
@@ -258,6 +346,11 @@ def step2_multiple_hours(show_plots:bool=False):
     clearing_price_values = [
         price_item.flatten()[0] for price_item in clearing_price
     ]  # remove the array values
+
+    # Print results
+    print('Social welfare reserve:', round(reserve_model.ObjVal, 2))
+    print('Social welfare day ahead:', round(m.ObjVal, 2))
+
 
     profit = [
         [
@@ -272,18 +365,6 @@ def step2_multiple_hours(show_plots:bool=False):
         for t in range(nbHour)
     ]
 
-<<<<<<< HEAD
-    print(f"Optimal objective value: {m.objVal} $")
-    for t in range(nbHour):
-        print('\n')
-        for g in range(nbUnits):
-            print(
-                f"p_{g+1} for hour {t+1}: production: {round(production[t][g].X,2)} MW, profit: {round(profit[t][g],2)} $"
-            )
-        print(f"clearing price for hour {t+1}:", round(clearing_price_values[t],2))
-    print("clearing price:", clearing_price_values,2)
-    print("demand unsatisfied:", demand_unsatisfied,2)
-=======
     # print result
     print(f"Optimal objective value: {m.objVal} $")
     for t in range(nbHour):
@@ -294,7 +375,6 @@ def step2_multiple_hours(show_plots:bool=False):
         print(f"clearing price for hour {t+1}:", clearing_price_values[t])
     print("clearing price:", clearing_price_values)
     print("demand unsatisfied:", demand_unsatisfied)
->>>>>>> 594bebe2d8e9a879adce1f2510c7dff7911c0aed
     print("SoC:", state_of_charge.X)
 
     results = pd.DataFrame()
@@ -312,8 +392,13 @@ def step2_multiple_hours(show_plots:bool=False):
 
     if show_plots:
         plot_results(nbUnits=nbUnits, results=results)
+    
 
     return m
 
-step2_multiple_hours(show_plots=True)
+step6_reserve_market(show_plots=True)
+
+
+
+
 
