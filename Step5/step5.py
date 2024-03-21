@@ -129,7 +129,6 @@ load_curtailment_cost = 400 # Demand curtailment cost: 400$/MWh
 coef_up_regulation = 0.1
 coef_down_regulation = 0.13
 
-
 ################################################################################
 # Model
 ################################################################################
@@ -147,21 +146,21 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     ############################################################################
     # Balancing market clearing
     ############################################################################
-    t = hour # Choose one hour for the balancing market clearing 
+    t = hour # hour chosen for the balancing market clearing 
 
-    # Calculate the balancing need
-    optimal_production = {g: production[t][g].X for g in range(nbUnits)} # Optimal production in the day-ahead market clearing
-    optimal_demand = {l: demand_supplied[t][l].x for l in range(nbLoadUnits)} # Optimal supplied demand in the day-ahead market clearing
+    # Balancing need calculation
+    optimal_production = {g: production[t][g].X for g in range(nbUnits)} # Production in the day-ahead market clearing
+    optimal_demand = {l: demand_supplied[t][l].x for l in range(nbLoadUnits)} # Supplied demand in the day-ahead market clearing
 
-    delta_total_power = sum(optimal_production[nbUnitsConventionnal + w]*delta_wind_production[w] for w in range(nbUnitsWind)) - sum(optimal_production[g] for g in outaged_generators) # Lack or Surplus of power compared to day-ahead prediction
-    balancing_need = - delta_total_power # The balancing need is the opposite of the surplus or lack of power
+    delta_total_power = gp.quicksum(optimal_production[nbUnitsConventionnal + w]*delta_wind_production[w] for w in range(nbUnitsWind)) - gp.quicksum(optimal_production[g] for g in outaged_generators) # Lack or Surplus of power compared to day-ahead prediction
+    balancing_need = - delta_total_power # Balancing need is the opposite of the surplus or lack of power
 
     # Balancing biding
     balance_constraint = day_ahead_model.getConstrByName(f'GenerationBalance_{t}')
-    uniform_price = balance_constraint.Pi
+    clearing_price = balance_constraint.Pi
 
-    price_up_regulation = {g: uniform_price + generation_units.units[g]["Cost"]*0.1 for g in range(nbUnits) if g not in outaged_generators} # Conventional generators up-regulation price
-    price_down_regulation = {g: uniform_price - generation_units.units[g]["Cost"]*0.13 for g in range(nbUnits) if g not in outaged_generators} # Conventional generators down-regulation price
+    price_up_regulation = {g: clearing_price + generation_units.units[g]["Cost"]*coef_up_regulation for g in range(nbUnits) if g not in outaged_generators} # Conventional generators up-regulation price
+    price_down_regulation = {g: clearing_price - generation_units.units[g]["Cost"]*coef_down_regulation for g in range(nbUnits) if g not in outaged_generators} # Conventional generators down-regulation price
 
     # Optimisation
     m = gp.Model()
@@ -214,6 +213,13 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     ################################################################################
     # Results
     ################################################################################
+    # Get optimal values
+    balancing_price = balancing_need_constraint.Pi 
+
+    # Print results
+    print("Day-ahead price: ", clearing_price)
+    print("Balancing price: ", balancing_price)
+    print("Balancing need: ", balancing_need)
 
     if not show_plots:
         return m

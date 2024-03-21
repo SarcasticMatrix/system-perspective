@@ -117,9 +117,9 @@ load_units.export_to_json()
 # Adding of the battery
 ################################################################################
 efficiency = np.sqrt(0.937)
-min_SoC = 0  # minimum of state of charge
+min_SoC = 0  # minimum of the battery capacity (called here Sate Of Charge but not in %)
 max_SoC = 600  # MWh maximum of state of charge = battery capacity
-value_init = max_SoC / 2
+value_init = max_SoC / 2 #Start with 50%
 P_max = 150  # MW
 delta_t = 1  # hour
 
@@ -131,9 +131,6 @@ def step2_multiple_hours(show_plots:bool=False):
     m = gp.Model()
 
     # Variables
-    # production = m.addMVar(
-    #     shape=(nbHour, nbUnits), lb=0, name="power_generation", vtype=GRB.CONTINUOUS
-    # )
     production =  {t: {g: m.addVar(
         lb=0, 
         ub=generation_units.units[g]["PMAX"] * generation_units.units[g]["Availability"][t],  # generation unitsPhave a _max
@@ -302,5 +299,5 @@ def step2_multiple_hours(show_plots:bool=False):
 
     return m
 
-# step2_multiple_hours(show_plots=True)
+step2_multiple_hours(show_plots=True)
 
