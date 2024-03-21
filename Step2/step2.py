@@ -242,7 +242,6 @@ def step2_multiple_hours(show_plots:bool=False):
     m.addConstr(state_of_charge[0] == value_init )# - (power_injected[0]/efficiency  - power_drawn[0]*efficiency))
     m.addConstr(value_init - state_of_charge[-1] <= 0)
 
-
     m.optimize()
 
     ################################################################################
@@ -267,17 +266,17 @@ def step2_multiple_hours(show_plots:bool=False):
         for t in range(nbHour)
     ]
 
-    # print result
-    # print(f"Optimal objective value: {m.objVal} $")
-    # for t in range(nbHour):
-    #     for g in range(nbUnits):
-    #         print(
-    #             f"p_{g+1} for hour {t+1}: production: {production[t][g].X} MW, profit: {profit[t][g]} $"
-    #         )
-    #     print(f"clearing price for hour {t+1}:", clearing_price_values[t])
-    # print("clearing price:", clearing_price_values)
-    # print("demand unsatisfied:", demand_unsatisfied)
-    # print("SoC:", state_of_charge.X)
+    print(f"Optimal objective value: {m.objVal} $")
+    for t in range(nbHour):
+        print('\n')
+        for g in range(nbUnits):
+            print(
+                f"p_{g+1} for hour {t+1}: production: {round(production[t][g].X,2)} MW, profit: {round(profit[t][g],2)} $"
+            )
+        print(f"clearing price for hour {t+1}:", round(clearing_price_values[t],2))
+    print("clearing price:", clearing_price_values,2)
+    print("demand unsatisfied:", demand_unsatisfied,2)
+    print("SoC:", state_of_charge.X)
 
     results = pd.DataFrame()
     results["Hour"] = np.arange(nbHour)
@@ -297,5 +296,5 @@ def step2_multiple_hours(show_plots:bool=False):
 
     return m
 
-#step2_multiple_hours(show_plots=True)
+step2_multiple_hours(show_plots=True)
 
