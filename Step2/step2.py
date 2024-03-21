@@ -9,7 +9,7 @@ from gurobipy import GRB
 # Creation of Conventionnal Generation Units
 ################################################################################
 
-from generationUnits import GenerationUnits
+from scripts.generationUnits import GenerationUnits
 
 # Parameter units
 generationUnits_parameters = pd.read_csv("inputs/gen_parameters.csv", sep=";")
@@ -79,13 +79,13 @@ for unit_id in range(nbUnitsWind):
         down_reserve=0,
     )
 
-generation_units.export_to_json()
+#generation_units.export_to_json()
 
 ################################################################################
 # Creation of Loads Units
 ################################################################################
 
-from loadUnits import LoadUnits
+from scripts.loadUnits import LoadUnits
 
 # parameter load
 total_needed_demand = pd.read_csv("inputs/load_profile.csv", sep=";")[
@@ -110,7 +110,7 @@ for unit_id in range(nbLoadUnits):
         total_needed_demand=total_needed_demand,
     )
 
-load_units.export_to_json()
+#load_units.export_to_json()
 
 
 ################################################################################
@@ -126,6 +126,8 @@ delta_t = 1  # hour
 ################################################################################
 # Model
 ################################################################################
+
+from scripts.plot_results import plot_results
 
 def step2_multiple_hours(show_plots:bool=False):
     m = gp.Model()
@@ -243,9 +245,6 @@ def step2_multiple_hours(show_plots:bool=False):
 
     m.optimize()
 
-    if not show_plots:
-        return m
-
     ################################################################################
     # Results
     ################################################################################
@@ -293,11 +292,10 @@ def step2_multiple_hours(show_plots:bool=False):
     results["State of charge"] = state_of_charge.X / max_SoC
     results["Battery profit"] = -results["Clearing price"] * results["Battery production"]
 
-    from plot_results import plot_results
-
-    plot_results(nbUnits=nbUnits, results=results)
+    if show_plots:
+        plot_results(nbUnits=nbUnits, results=results)
 
     return m
 
-step2_multiple_hours(show_plots=True)
+#step2_multiple_hours(show_plots=True)
 

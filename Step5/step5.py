@@ -1,6 +1,5 @@
 import pandas as pd
 import gurobipy as gp
-import numpy as np
 from gurobipy import GRB
 import sys
 import os
@@ -18,7 +17,7 @@ from step2 import step2_multiple_hours
 # Creation of Conventionnal Generation Units
 ################################################################################
 
-from generationUnits import GenerationUnits
+from scripts.generationUnits import GenerationUnits
 
 # Parameter units
 generationUnits_parameters = pd.read_csv("inputs/gen_parameters.csv", sep=";")
@@ -88,13 +87,13 @@ for unit_id in range(nbUnitsWind):
         down_reserve=0,
     )
 
-generation_units.export_to_json()
+#generation_units.export_to_json()
 
 ################################################################################
 # Creation of Loads Units
 ################################################################################
 
-from loadUnits import LoadUnits
+from scripts.loadUnits import LoadUnits
 
 # parameter load
 total_needed_demand = pd.read_csv("inputs/load_profile.csv", sep=";")[
@@ -119,7 +118,7 @@ for unit_id in range(nbLoadUnits):
         total_needed_demand=total_needed_demand,
     )
 
-load_units.export_to_json()
+#load_units.export_to_json()
 
 
 ################################################################################
@@ -133,15 +132,30 @@ coef_down_regulation = 0.13
 # Model
 ################################################################################
 
-def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind_production:list= [-0.1,0.15,0.15,-0.1,-0.1,-0.1],show_plots:bool=False):
+def step5_balancing_market(
+        hour : int = 17,
+        outaged_generators : list = [10],
+        delta_wind_production : list = [-0.1,0.15,0.15,-0.1,-0.1,-0.1],
+        show_plots : bool = False
+    ):
     ############################################################################
     # Day-ahead market clearing
     ############################################################################
 
-    day_ahead_model = step2_multiple_hours(show_plots=False)
+    day_ahead_model = step2_multiple_hours(show_plots=show_plots)
     print("model", day_ahead_model)
-    production = {t: {g: day_ahead_model.getVarByName(f'production of generator {g} at time {t}') for g in range(nbUnits)} for t in range(nbHour)}
-    demand_supplied = {t: {l: day_ahead_model.getVarByName(f'Supplied demand to load {l} at time {t}') for l in range(nbLoadUnits)} for t in range(nbHour)}
+    production = {
+        t:  {
+                g: day_ahead_model.getVarByName(f'production of generator {g} at time {t}') for g in range(nbUnits)
+            }
+        for t in range(nbHour)
+        }
+    demand_supplied = {
+        t:  {
+                l: day_ahead_model.getVarByName(f'Supplied demand to load {l} at time {t}') for l in range(nbLoadUnits)
+            }
+        for t in range(nbHour)
+        }
 
     ############################################################################
     # Balancing market clearing
@@ -149,8 +163,12 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     t = hour # hour chosen for the balancing market clearing 
 
     # Balancing need calculation
-    optimal_production = {g: production[t][g].X for g in range(nbUnits)} # Production in the day-ahead market clearing
-    optimal_demand = {l: demand_supplied[t][l].x for l in range(nbLoadUnits)} # Supplied demand in the day-ahead market clearing
+    optimal_production = { # Production in the day-ahead market clearing
+        g: production[t][g].X for g in range(nbUnits)
+    } 
+    optimal_demand = { # Supplied demand in the day-ahead market clearing
+        l: demand_supplied[t][l].x for l in range(nbLoadUnits)
+    } 
 
     delta_total_power = gp.quicksum(optimal_production[nbUnitsConventionnal + w]*delta_wind_production[w] for w in range(nbUnitsWind)) - gp.quicksum(optimal_production[g] for g in outaged_generators) # Lack or Surplus of power compared to day-ahead prediction
     balancing_need = - delta_total_power # Balancing need is the opposite of the surplus or lack of power
@@ -159,8 +177,12 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     balance_constraint = day_ahead_model.getConstrByName(f'GenerationBalance_{t}')
     clearing_price = balance_constraint.Pi
 
-    price_up_regulation = {g: clearing_price + generation_units.units[g]["Cost"]*coef_up_regulation for g in range(nbUnits) if g not in outaged_generators} # Conventional generators up-regulation price
-    price_down_regulation = {g: clearing_price - generation_units.units[g]["Cost"]*coef_down_regulation for g in range(nbUnits) if g not in outaged_generators} # Conventional generators down-regulation price
+    price_up_regulation = { # Conventional generators up-regulation price
+        g: clearing_price + generation_units.units[g]["Cost"]*coef_up_regulation for g in range(nbUnits) if g not in outaged_generators
+    } 
+    price_down_regulation = { # Conventional generators down-regulation price
+        g: clearing_price - generation_units.units[g]["Cost"]*coef_down_regulation for g in range(nbUnits) if g not in outaged_generators
+    } 
 
     # Optimisation
     m = gp.Model()
@@ -221,9 +243,6 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     print("Balancing price: ", balancing_price)
     print("Balancing need: ", balancing_need)
 
-    if not show_plots:
-        return m
-    
     return m
 
 

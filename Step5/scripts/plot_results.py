@@ -106,23 +106,3 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
     plt.show()
 
     plt.figure()
-    battery_profit = results["Battery profit"].values.tolist()
-
-    total_revenue = round(results["Battery profit"].sum())
-    plt.title(f"Total profit: {total_revenue}")
-    plt.step(
-        hours,
-        battery_profit + [battery_profit[-1]],
-        where="post",
-        linewidth=0.8,
-        color="blue",
-        label="Battery profit",
-    )
-    plt.axhline(y=0, linestyle="--", linewidth=0.5, color="gray")
-    plt.ylabel("€")
-    plt.xlabel("Hours")
-    plt.legend(loc="upper left")
-    plt.grid(which="minor", linestyle="--", linewidth=0.1, color="gray")
-    plt.grid(axis="x", linestyle="--", linewidth=0.5, color="gray")
-    plt.grid(which="major", linestyle="-", linewidth=0.1, color="gray")
-    plt.show()
