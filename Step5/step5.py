@@ -33,6 +33,8 @@ ramp_down = generationUnits_parameters["RD"].values  # Maximum decrease of produ
 prod_init = generationUnits_parameters["Pini"].values  # Initial production
 up_reserve = generationUnits_parameters["R+"].values # Up reserve capacity 
 down_reserve = generationUnits_parameters["R-"].values # Down reserve capacity
+up_reserve_offer = generationUnits_parameters["Cu"].values #Up reserve offer price of the generating unit
+down_reserve_offer = generationUnits_parameters["Cd"].values #Down reserve offer price of the generating unit
 
 generation_units = GenerationUnits()
 nbUnitsConventionnal = generationUnits_parameters.shape[0]
@@ -50,6 +52,8 @@ for unit_id in range(nbUnitsConventionnal):
         prod_init=prod_init[unit_id],
         up_reserve=up_reserve[unit_id],
         down_reserve=down_reserve[unit_id],
+        up_regulation_offer=up_reserve_offer[unit_id],
+        down_regulation_offer=down_reserve_offer[unit_id],
     )
 
 ################################################################################
@@ -85,6 +89,8 @@ for unit_id in range(nbUnitsWind):
         prod_init=0,
         up_reserve=0,
         down_reserve=0,
+        up_regulation_offer=0,
+        down_regulation_offer=0,
     )
 
 #generation_units.export_to_json()
@@ -120,13 +126,13 @@ for unit_id in range(nbLoadUnits):
 
 #load_units.export_to_json()
 
-
 ################################################################################
 # Balancing bids
 ################################################################################
 load_curtailment_cost = 400 # Demand curtailment cost: 400$/MWh
 coef_up_regulation = 0.1
 coef_down_regulation = 0.13
+
 
 ################################################################################
 # Model
@@ -190,7 +196,7 @@ def step5_balancing_market(
     # Optimisation
     m = gp.Model()
 
-    #variables
+    # Cariables
     up_production =  {g: m.addVar(
         lb=0, 
         ub=min(generation_units.units[g]["PMAX"] - optimal_production[g], generation_units.units[g]["Up reserve"]), #  Upper bound is the minimum between the up reserve capacity and the remaining power before reaching the generator's capacity
