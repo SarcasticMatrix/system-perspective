@@ -20,13 +20,11 @@ pmax = generationUnits_parameters["Pmax"].values
 pmin = generationUnits_parameters["Pmin"].values
 Csu = generationUnits_parameters["Csu"].values  # Start-up cost
 Uini = generationUnits_parameters["Uini"].values  # Initial state (1 if on, 0 else)
-ramp_up = generationUnits_parameters[
-    "RU"
-].values  # Maximum augmentation of production (ramp-up)
-ramp_down = generationUnits_parameters[
-    "RD"
-].values  # Maximum decrease of production (ramp-up)
+ramp_up = generationUnits_parameters["RU"].values  # Maximum augmentation of production (ramp-up)
+ramp_down = generationUnits_parameters["RD"].values  # Maximum decrease of production (ramp-up)
 prod_init = generationUnits_parameters["Pini"].values  # Initial production
+up_reserve = generationUnits_parameters["R+"].values # Up reserve capacity 
+down_reserve = generationUnits_parameters["R-"].values # Down reserve capacity
 
 generation_units = GenerationUnits()
 nbUnitsConventionnal = generationUnits_parameters.shape[0]
@@ -42,6 +40,8 @@ for unit_id in range(nbUnitsConventionnal):
         ramp_up=ramp_up[unit_id],
         ramp_down=ramp_down[unit_id],
         prod_init=prod_init[unit_id],
+        up_reserve=up_reserve[unit_id],
+        down_reserve=down_reserve[unit_id],
     )
 
 ################################################################################
@@ -75,6 +75,8 @@ for unit_id in range(nbUnitsWind):
         ramp_up=10000,  # big M, for no constraint on rampu_up
         ramp_down=0,
         prod_init=0,
+        up_reserve=0,
+        down_reserve=0,
     )
 
 generation_units.export_to_json()
@@ -129,12 +131,26 @@ def step2_multiple_hours(show_plots:bool=False):
     m = gp.Model()
 
     # Variables
-    production = m.addMVar(
-        shape=(nbHour, nbUnits), lb=0, name="power_generation", vtype=GRB.CONTINUOUS
-    )
-    demand_supplied = m.addMVar(
-        shape=(nbHour, nbLoadUnits), lb=0, name=f"demand_supplied", vtype=GRB.CONTINUOUS
-    )
+    # production = m.addMVar(
+    #     shape=(nbHour, nbUnits), lb=0, name="power_generation", vtype=GRB.CONTINUOUS
+    # )
+    production =  {t: {g: m.addVar(
+        lb=0, 
+        ub=generation_units.units[g]["PMAX"] * generation_units.units[g]["Availability"][t],  # generation unitsPhave a _max
+        name=f'production of generator {g} at time {t}',
+        vtype=GRB.CONTINUOUS
+        ) 
+        for g in range(nbUnits)} for t in range(nbHour)}
+  
+
+    demand_supplied = {t: {l: m.addVar(
+        lb=0, 
+        ub=load_units.units[l]["Needed demand"][t],     # Cannot supply more than necessary
+        name=f'Supplied demand to load {l} at time {t}',
+        vtype=GRB.CONTINUOUS        
+        )
+        for l in range(nbLoadUnits)} for t in range(nbHour)
+    }
     state_of_charge = m.addMVar(
         shape=(nbHour,),
         lb=min_SoC,
@@ -159,11 +175,11 @@ def step2_multiple_hours(show_plots:bool=False):
 
     # Objective function
     objective = gp.quicksum(
-        demand_supplied[t, l] * load_units.units[l]["Bid price"]
+        demand_supplied[t][l] * load_units.units[l]["Bid price"]
         for t in range(nbHour)
         for l in range(nbLoadUnits)
     )  - gp.quicksum(
-        production[t, g] * generation_units.units[g]["Cost"]
+        production[t][g] * generation_units.units[g]["Cost"]
         for t in range(nbHour)
         for g in range(nbUnits)
     ) 
@@ -171,29 +187,11 @@ def step2_multiple_hours(show_plots:bool=False):
 
     # Constraints
 
-    # generation unitsPhave a _max
-    max_prod_constraint = [
-        m.addConstr(
-            production[t, g]
-            <= generation_units.units[g]["PMAX"]
-            * generation_units.units[g]["Availability"][t]
-        )
-        for g in range(nbUnits)
-        for t in range(nbHour)
-    ]
-
-    # Cannot supply more than necessary
-    demand_supplied_constraint = [
-        m.addConstr(demand_supplied[t, l] <= load_units.units[l]["Needed demand"][t])
-        for l in range(nbLoadUnits)
-        for t in range(nbHour)
-    ]
-
     # Supplied demand match generation
     balance_constraint = [
         m.addConstr(
-            sum(demand_supplied[t, l] for l in range(nbLoadUnits)) + power_drawn[t]
-            - gp.quicksum(production[t, g] for g in range(nbUnits)) - power_injected[t] 
+            sum(demand_supplied[t][l] for l in range(nbLoadUnits)) + power_drawn[t]
+            - gp.quicksum(production[t][g] for g in range(nbUnits)) - power_injected[t] 
             == 0,
             name=f"GenerationBalance_{t}",
         )
@@ -208,14 +206,14 @@ def step2_multiple_hours(show_plots:bool=False):
             if t == 0:  # Apply the special condition for t=0
                 ramp_up_constraint.append(
                     m.addConstr(
-                        production[t, g]
+                        production[t][g]
                         <= generation_units.units[g]["Initial production"]
                         + generation_units.units[g]["Ramp up"],
                     )
                 )
                 ramp_down_constraint.append(
                     m.addConstr(
-                        production[t, g]
+                        production[t][g]
                         >= generation_units.units[g]["Initial production"]
                         - generation_units.units[g]["Ramp down"],
                     )
@@ -223,14 +221,14 @@ def step2_multiple_hours(show_plots:bool=False):
             else:  # Apply the regular ramp-down constraint for t>0
                 ramp_up_constraint.append(
                     m.addConstr(
-                        production[t, g]
-                        <= production[t - 1, g] + generation_units.units[g]["Ramp up"],
+                        production[t][g]
+                        <= production[t-1][g] + generation_units.units[g]["Ramp up"],
                     )
                 )
                 ramp_down_constraint.append(
                     m.addConstr(
-                        production[t, g]
-                        >= production[t - 1, g] - generation_units.units[g]["Ramp down"],
+                        production[t][g]
+                        >= production[t-1][g] - generation_units.units[g]["Ramp down"],
                     )
                 )
 
@@ -304,5 +302,5 @@ def step2_multiple_hours(show_plots:bool=False):
 
     return m
 
-step2_multiple_hours(show_plots=True)
+# step2_multiple_hours(show_plots=True)
 

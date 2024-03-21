@@ -2,15 +2,15 @@ import pandas as pd
 import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
-# import sys
-# sys.path.append('../')  # Add the parent folder to the system path
+import sys
 import os
-try:
-    os.chdir('..')
-except:
-    pass
 
-from Step2.step2 import step2_multiple_hours  
+# Ajoute le chemin du dossier Step2 à sys.path
+chemin_dossier_step2 = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Step2'))
+sys.path.insert(0, chemin_dossier_step2)
+
+# Importe maintenant la fonction de step2.py
+from step2 import step2_multiple_hours  
 
 # cd C:\Users\julia\OneDrive\DTU\course\S2\46755 - Renewables in Electricity Markets\Assignment1 - git
 
@@ -134,17 +134,15 @@ coef_down_regulation = 0.13
 # Model
 ################################################################################
 
-def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind_production:dict= {'W1':-0.1,'W2':0.15,'W3':-0.1,'W4':0.15,'W5':-0.1,'W6':-0.1},show_plots:bool=False):
+def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind_production:list= [-0.1,0.15,0.15,-0.1,-0.1,-0.1],show_plots:bool=False):
     ############################################################################
     # Day-ahead market clearing
     ############################################################################
 
     day_ahead_model = step2_multiple_hours(show_plots=False)
-
-    production = day_ahead_model.getVarByName('power_generation').X
-    demand_supplied = day_ahead_model.getVarByName('demand_supplied').X
-    battery_storage = day_ahead_model.getVarByName('power_drawn').X
-    battery_injected = day_ahead_model.getVarByName('power_injected').X
+    print("model", day_ahead_model)
+    production = {t: {g: day_ahead_model.getVarByName(f'production of generator {g} at time {t}') for g in range(nbUnits)} for t in range(nbHour)}
+    demand_supplied = {t: {l: day_ahead_model.getVarByName(f'Supplied demand to load {l} at time {t}') for l in range(nbLoadUnits)} for t in range(nbHour)}
 
     ############################################################################
     # Balancing market clearing
@@ -155,7 +153,7 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     optimal_production = {g: production[t][g].X for g in range(nbUnits)} # Optimal production in the day-ahead market clearing
     optimal_demand = {l: demand_supplied[t][l].x for l in range(nbLoadUnits)} # Optimal supplied demand in the day-ahead market clearing
 
-    delta_total_power = sum(optimal_production[w]*delta_wind_production[w] for w in range(nbUnitsConventionnal, nbUnits)) - sum(optimal_production[g] for g in outaged_generators) # Lack/Surplus of power compared to day-ahead decision
+    delta_total_power = sum(optimal_production[nbUnitsConventionnal + w]*delta_wind_production[w] for w in range(nbUnitsWind)) - sum(optimal_production[g] for g in outaged_generators) # Lack or Surplus of power compared to day-ahead prediction
     balancing_need = - delta_total_power # The balancing need is the opposite of the surplus or lack of power
 
     # Balancing biding
@@ -171,7 +169,7 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     #variables
     up_production =  {g: m.addVar(
         lb=0, 
-        ub=min(generation_units.units[g]["PMAX"] - optimal_production[g], generation_units.units[g]["up reserve"]), #  Upper bound is the minimum between the up reserve capacity and the remaining power before reaching the generator's capacity
+        ub=min(generation_units.units[g]["PMAX"] - optimal_production[g], generation_units.units[g]["Up reserve"]), #  Upper bound is the minimum between the up reserve capacity and the remaining power before reaching the generator's capacity
         name=f'up production of generator {g}',
         vtype=GRB.CONTINUOUS,        
         )
@@ -179,13 +177,13 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     }     
     down_production =  {g: m.addVar(
         lb=0, 
-        ub=min(generation_units.units[g]["PMAX"] - optimal_production[g], generation_units.units[g]["down reserve"]), # Upper bound is the minimum between the down reserve capacity and the production of the day-ahead clearing
+        ub=min(generation_units.units[g]["PMAX"] - optimal_production[g], generation_units.units[g]["Down reserve"]), # Upper bound is the minimum between the down reserve capacity and the production of the day-ahead clearing
         name=f'down production of generator {g}',
         vtype=GRB.CONTINUOUS,        
         )
         for g in range(nbUnits) if g not in outaged_generators
     }  
-    down_demand = {g: m.addVar( # Down-regulation load. 
+    down_demand = {l: m.addVar( # Down-regulation load. 
         lb=0, 
         ub=optimal_demand[l], # Upper bound is the demand supplied after day-ahead clearing
         name=f'down production of generator {l}',
@@ -212,4 +210,15 @@ def step5_balancing_market(hour:int=17, outaged_generators:list=[10], delta_wind
     
     # Optimise
     m.optimize()
+
+    ################################################################################
+    # Results
+    ################################################################################
+
+    if not show_plots:
+        return m
     
+    return m
+
+
+step5_balancing_market(show_plots=False)

@@ -48,7 +48,7 @@ class GenerationUnits:
 
         dictionary = {f"Generation unit {j}": self.units[j] for j in range(nbr_units)}
         json_object = json.dumps(dictionary, default=lambda x: x.tolist(), indent=4)
-        with open("Step2/data_generationUnits.json", "w") as outfile:
+        with open("Step5/data_generationUnits.json", "w") as outfile:
             outfile.write(json_object)
 
         print("Export is done ...")

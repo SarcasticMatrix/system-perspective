@@ -34,7 +34,9 @@
         ],
         "Ramp up": 120,
         "Ramp down": 120,
-        "Initial production": 76
+        "Initial production": 76,
+        "Up reserve": 40,
+        "Down reserve": 40
     },
     "Generation unit 1": {
         "Id": 1,
@@ -71,7 +73,9 @@
         ],
         "Ramp up": 120,
         "Ramp down": 120,
-        "Initial production": 76
+        "Initial production": 76,
+        "Up reserve": 40,
+        "Down reserve": 40
     },
     "Generation unit 2": {
         "Id": 2,
@@ -108,7 +112,9 @@
         ],
         "Ramp up": 350,
         "Ramp down": 350,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 70,
+        "Down reserve": 70
     },
     "Generation unit 3": {
         "Id": 3,
@@ -145,7 +151,9 @@
         ],
         "Ramp up": 240,
         "Ramp down": 240,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 180,
+        "Down reserve": 180
     },
     "Generation unit 4": {
         "Id": 4,
@@ -182,7 +190,9 @@
         ],
         "Ramp up": 60,
         "Ramp down": 60,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 60,
+        "Down reserve": 60
     },
     "Generation unit 5": {
         "Id": 5,
@@ -219,7 +229,9 @@
         ],
         "Ramp up": 155,
         "Ramp down": 155,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 30,
+        "Down reserve": 30
     },
     "Generation unit 6": {
         "Id": 6,
@@ -256,7 +268,9 @@
         ],
         "Ramp up": 155,
         "Ramp down": 155,
-        "Initial production": 124
+        "Initial production": 124,
+        "Up reserve": 30,
+        "Down reserve": 30
     },
     "Generation unit 7": {
         "Id": 7,
@@ -293,7 +307,9 @@
         ],
         "Ramp up": 280,
         "Ramp down": 280,
-        "Initial production": 240
+        "Initial production": 240,
+        "Up reserve": 0,
+        "Down reserve": 0
     },
     "Generation unit 8": {
         "Id": 8,
@@ -330,7 +346,9 @@
         ],
         "Ramp up": 280,
         "Ramp down": 280,
-        "Initial production": 240
+        "Initial production": 240,
+        "Up reserve": 0,
+        "Down reserve": 0
     },
     "Generation unit 9": {
         "Id": 9,
@@ -367,7 +385,9 @@
         ],
         "Ramp up": 300,
         "Ramp down": 300,
-        "Initial production": 240
+        "Initial production": 240,
+        "Up reserve": 0,
+        "Down reserve": 0
     },
     "Generation unit 10": {
         "Id": 10,
@@ -404,7 +424,9 @@
         ],
         "Ramp up": 180,
         "Ramp down": 180,
-        "Initial production": 248
+        "Initial production": 248,
+        "Up reserve": 60,
+        "Down reserve": 60
     },
     "Generation unit 11": {
         "Id": 11,
@@ -441,7 +463,9 @@
         ],
         "Ramp up": 240,
         "Ramp down": 240,
-        "Initial production": 280
+        "Initial production": 280,
+        "Up reserve": 40,
+        "Down reserve": 40
     },
     "Generation unit 12": {
         "Id": 12,
@@ -478,7 +502,9 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 0,
+        "Down reserve": 0
     },
     "Generation unit 13": {
         "Id": 13,
@@ -515,7 +541,9 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 0,
+        "Down reserve": 0
     },
     "Generation unit 14": {
         "Id": 14,
@@ -552,7 +580,9 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 0,
+        "Down reserve": 0
     },
     "Generation unit 15": {
         "Id": 15,
@@ -589,7 +619,9 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 0,
+        "Down reserve": 0
     },
     "Generation unit 16": {
         "Id": 16,
@@ -626,7 +658,9 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 0,
+        "Down reserve": 0
     },
     "Generation unit 17": {
         "Id": 17,
@@ -663,6 +697,8 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Initial production": 0,
+        "Up reserve": 0,
+        "Down reserve": 0
     }
 }
