@@ -230,6 +230,7 @@ def step5_balancing_market(
     )
     m.setObjective(objective, GRB.MINIMIZE)
     
+
     # Constraints
     balancing_need_constraint = m.addLConstr(
         gp.quicksum( up_production[g] - down_production[g] for g in range(nbUnits) if g not in outaged_generators) 
