@@ -177,7 +177,8 @@ def step5_balancing_market(
     } 
     optimal_demand = { # Supplied demand in the day-ahead market clearing
         l: demand_supplied[t][l].x for l in range(nbLoadUnits)
-    } 
+    }
+    
 
     delta_total_power = gp.quicksum(optimal_production[nbUnitsConventionnal + w]*delta_wind_production[w] for w in range(nbUnitsWind)) - gp.quicksum(optimal_production[g] for g in outaged_generators) # Lack or Surplus of power compared to day-ahead prediction
     balancing_need = - delta_total_power # Balancing need is the opposite of the surplus or lack of power

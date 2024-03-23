@@ -120,27 +120,27 @@ nbNode = 24
 
 for id_node in range(1, nbNode + 1):
 
-    print("-" * 40)
-    print(f"Work on node: {id_node}")
+    # print("-" * 40)
+    # print(f"Work on node: {id_node}")
 
     # We add the generation unit which are located at the node
     node_generation_units = GenerationUnits()
-    print(" Generation units:")
+    # print(" Generation units:")
     for unit in generation_units.units:
         if unit["Id node"] == id_node:
-            print(f'  - a generation unit is added {unit["Id"]}')
+            # print(f'  - a generation unit is added {unit["Id"]}')
             node_generation_units.add_constructed_unit(unit)
 
     # We add the load unit which are at located at the node
     node_load_units = LoadUnits()
-    print(" Load units:")
+    # print(" Load units:")
     for unit in load_units.units:
         if unit["Id node"] == id_node:
-            print(f'  - a load unit is added: {unit["Id"]}')
+            # print(f'  - a load unit is added: {unit["Id"]}')
             node_load_units.add_constructed_unit(unit)
 
     # We add the transmission line
-    print(" Transmission lines:")
+    # print(" Transmission lines:")
     transmission_lines = []
     transmission_data = pd.read_csv("inputs/transmission_parameters.csv", sep=";")
     mask = (transmission_data["from"] == id_node) | (transmission_data["to"] == id_node)
@@ -163,7 +163,7 @@ for id_node in range(1, nbNode + 1):
         )
         transmission_lines.append(transmissionLine)
 
-        print(f"  - a transmission line with node {to_node} is added")
+        # print(f"  - a transmission line with node {to_node} is added")
 
     nodes.add_node(
         id=id_node,
@@ -251,6 +251,9 @@ demand_supplied_constraint = [
     for l in range(nbLoadUnits)
     for t in range(nbHour)
 ]
+
+print("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH","\n\n")
+print(nodes.get_ids_load(2))
 
 # Supplied demand match generation
 balance_constraint = [
