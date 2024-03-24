@@ -176,11 +176,11 @@ def step5_balancing_market(
         g: production[t][g].X for g in range(nbUnits)
     } 
     optimal_demand = { # Supplied demand in the day-ahead market clearing
-        l: demand_supplied[t][l].x for l in range(nbLoadUnits)
+        l: demand_supplied[t][l].X for l in range(nbLoadUnits)
     }
     
 
-    delta_total_power = gp.quicksum(optimal_production[nbUnitsConventionnal + w]*delta_wind_production[w] for w in range(nbUnitsWind)) - gp.quicksum(optimal_production[g] for g in outaged_generators) # Lack or Surplus of power compared to day-ahead prediction
+    delta_total_power = sum(optimal_production[nbUnitsConventionnal + w]*delta_wind_production[w] for w in range(nbUnitsWind)) - sum(optimal_production[g] for g in outaged_generators) # Lack or Surplus of power compared to day-ahead prediction
     balancing_need = - delta_total_power # Balancing need is the opposite of the surplus or lack of power
 
     # Balancing biding
@@ -242,17 +242,42 @@ def step5_balancing_market(
     
     # Optimise
     m.optimize()
-
+    
     ################################################################################
     # Results
     ################################################################################
-    # Get optimal values
+    # Optimal value
     balancing_price = balancing_need_constraint.Pi 
+
+    #nbalancing profits and losses of the generators 
+    balancing_profit = {g: (balancing_price - generation_units.units[g]["Cost"])*(up_production[g].X - down_production[g].X) for g in range(nbUnits) if g not in outaged_generators}
+    balancing_profit.update({g: (balancing_price - generation_units.units[g]["Cost"])*(- optimal_production[g]) for g in outaged_generators})
+
+    balancing_profit_one_price = balancing_profit.copy()
+    balancing_profit_two_price = balancing_profit.copy()
+    balancing_profit_one_price.update({w + nbUnitsConventionnal: (balancing_price - generation_units.units[w + nbUnitsConventionnal]["Cost"])*(optimal_production[w + nbUnitsConventionnal]*delta_wind_production[w]) for w in range(nbUnitsWind)}) 
+
+    balancing_profit_two_price.update({
+        w + nbUnitsConventionnal: 
+        (balancing_price if delta_wind_production[w] * delta_total_power > 0 else clearing_price) - generation_units.units[w + nbUnitsConventionnal]["Cost"] * (optimal_production[w + nbUnitsConventionnal] * delta_wind_production[w])
+        for w in range(nbUnitsWind)})
+
+    
+    # day-ahead profit 
+    profit_day_ahead ={g: (clearing_price - generation_units.units[g]["Cost"])*optimal_production[g] for g in range(nbUnits)}
+
+    # profit and loss 
+    profit_total_one_price = {g: profit_day_ahead[g] + balancing_profit_one_price[g]  for g in range(nbUnits)}
+    profit_total_two_price = {g: profit_day_ahead[g] + balancing_profit_two_price[g]  for g in range(nbUnits)}
+
 
     # Print results
     print("Day-ahead price: ", clearing_price)
     print("Balancing price: ", balancing_price)
     print("Balancing need: ", balancing_need)
+
+    print("Suppliers profit one price: ", profit_total_one_price)
+    print("Suppliers profit two price: ", profit_total_two_price)
 
     return m
 
