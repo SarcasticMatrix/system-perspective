@@ -62,6 +62,7 @@ class Nodes:
         for node in self.nodes:
             if node["Id"] == id_node:
                 return node["Load units"].get_ids()
+        return []
 
     def get_ids_generation(self, id_node):
         """
@@ -76,6 +77,7 @@ class Nodes:
         for node in self.nodes:
             if node["Id"] == id_node:
                 return node["Generation units"].get_ids()
+        return []
 
     def get_susceptances(self, id_node, to_node):
         """

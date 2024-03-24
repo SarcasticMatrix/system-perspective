@@ -261,7 +261,7 @@ print("\n","ahhhhhhhhhhhhhhhhhhhhhhhhh")
 
 balance_constraint = []
 for n in range(nbNode):
-    print(n, "load: ", nodes.get_ids_load(n), "generator: ", nodes.get_ids_generation(n))
+    print("Node:",n, "load: ", nodes.get_ids_load(n), "generator: ", nodes.get_ids_generation(n))
     liste = []
     for t in range(nbHour):
         constraint = m.addConstr(

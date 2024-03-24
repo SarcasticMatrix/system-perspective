@@ -120,153 +120,177 @@ for unit_id in range(nbLoadUnits):
 efficiency = np.sqrt(0.937)
 min_SoC = 0  # minimum of state of charge
 max_SoC = 600  # MWh maximum of state of charge = battery capacity
-init_SoC = max_SoC / 2
+value_init = max_SoC / 2
 P_max = 150  # MW
 delta_t = 1  # hour
 
 ################################################################################
 # Model
 ################################################################################
-def run_model(
-        t:int,
-        previous_SoC:float,
-        previous_production: list = None
-    ):
 
-    m = gp.Model()
+m = gp.Model()
 
-    # Variables
-    production = m.addMVar(shape=nbUnits, lb=0, name="power_generation", vtype=GRB.CONTINUOUS)
-    demand_supplied = m.addMVar(shape=nbLoadUnits, lb=0, name=f"demand_supplied", vtype=GRB.CONTINUOUS)
-    state_of_charge = m.addMVar(shape=1,lb=min_SoC,ub=max_SoC,name=f"state_of_charge",vtype=GRB.CONTINUOUS)
-    power_injected = m.addMVar(shape=1,lb=0,ub=P_max,name=f"power_injected",vtype=GRB.CONTINUOUS)
-    power_drawn = m.addMVar(shape=1,lb=0,ub=P_max,name=f"power_drawn",vtype=GRB.CONTINUOUS)
-    voltage_angle = m.addMVar(shape=nbNode,name="voltage_angle",vtype=GRB.CONTINUOUS)
+# Variables
+production = m.addMVar(
+    shape=(nbHour, nbUnits), lb=0, name="power_generation", vtype=GRB.CONTINUOUS
+)
+demand_supplied = m.addMVar(
+    shape=(nbHour, nbLoadUnits), lb=0, name=f"demand_supplied", vtype=GRB.CONTINUOUS
+)
+state_of_charge = m.addMVar(
+    shape=(nbHour,),
+    lb=min_SoC,
+    ub=max_SoC,
+    name=f"SoC",
+    vtype=GRB.CONTINUOUS,
+)
+power_injected = m.addMVar(
+    shape=(nbHour,),
+    lb=0,
+    ub=P_max,
+    name=f"power_injected",
+    vtype=GRB.CONTINUOUS,
+)
+power_drawn = m.addMVar(
+    shape=(nbHour,),
+    lb=0,
+    ub=P_max,
+    name=f"power_drawn",
+    vtype=GRB.CONTINUOUS,
+)
+voltage_angle = m.addMVar(
+    shape=(nbHour, nbNode), 
+    name="voltage_angle", 
+    vtype=GRB.CONTINUOUS
+)
 
-    # Objective function
-    objective = gp.quicksum(
-        demand_supplied[l] * load_units.get_bid_price(l)
-        for l in range(nbLoadUnits)
-    ) - gp.quicksum(
-        production[g] * generation_units.get_cost(g)
-        for g in range(nbUnits)
-    )
-    m.setObjective(objective, GRB.MAXIMIZE)
+# Objective function
+objective = gp.quicksum(
+gp.quicksum(
+    demand_supplied[t, l] * load_units.get_bid_price(l)
+    for l in range(nbLoadUnits)
+) - gp.quicksum(
+    production[t, g] * generation_units.get_cost(g)
+    for g in range(nbUnits)
+)
+for t in range(nbHour)
+)
+m.setObjective(objective, GRB.MAXIMIZE)
 
-    # generation units have a max
-    for g in range(nbUnits):
+# generation units have a max
+for g in range(nbUnits):
+    for t in range(nbHour):
         m.addConstr(
-            production[g]
+            production[t, g]
             <= generation_units.get_pmax(g)
             * generation_units.get_availability(g)[t],
-            name=f"PMAX_generation_unit_{g}"
+            name=f"PMAX_generation_unit_{g}_at_time_{t}"
         )
 
-    # Cannot supply more than necessary
-    for l in range(nbLoadUnits):
+# Cannot supply more than necessary
+for l in range(nbLoadUnits):
+    for t in range(nbHour): 
         m.addConstr(
-            demand_supplied[l] <= load_units.get_total_needed_demand(l)[t],
-            name=f"PMAX_load_unit_{g}"
+            demand_supplied[t, l] <= load_units.get_total_needed_demand(l)[t],
+            name=f"PMAX_load_unit_{g}_at_time_{t}"
             )
 
-    # Supplied demand match generation
-    for n in range(nbNode):
-        m.addConstr(
-            sum(demand_supplied[l] for l in nodes.get_ids_load(n))
-            - sum(production[g] for g in nodes.get_ids_generation(n))
-            + (power_drawn - power_injected) * (n == (7 - 1))
-            + sum(nodes.get_susceptance(n, to_node) * (voltage_angle[n] - voltage_angle[to_node]) for to_node in nodes.get_to_node(n))
+for n in range(nbNode):
+    for t in range(nbHour):
+        constraint = m.addConstr(
+            sum(
+                demand_supplied[t, l] for l in nodes.get_ids_load(n)
+                )
+            - sum(
+                production[t, g] for g in nodes.get_ids_generation(n)
+                )
+            + (power_drawn[t] - power_injected[t]) * (n == (7 - 1))
+            + sum(
+                nodes.get_susceptance(n, to_node)
+                * (voltage_angle[t, n] - voltage_angle[t, to_node])
+                for to_node in nodes.get_to_node(n)
+            )
             == 0,
-            name=f"balancing_{n}"
+            name=f"balancing_{n}_at_time_{t}"
         )
 
-    # # Ramp-up and ramp-down constraint
-    # for g in range(nbUnits):
-            
-    #     # Special condition for t = 0
-    #     if t == 0:  
-    #         m.addConstr(
-    #                 production[g] <= generation_units.get_prod_init(g) + generation_units.get_ramp_up(g),
-    #                 f"ramp_up_{g}"
-    #             )
-    #         m.addConstr(
-    #                 production[g] >= generation_units.get_prod_init(g) - generation_units.get_ramp_down(g),
-    #                 f"ramp_down_{g}"
-    #             )
-            
-    #     # Regular ramp constraints for t > 0
-    #     else:  
-    #         m.addConstr(
-    #                 production[g] <= previous_production[g] + generation_units.get_ramp_up(g),
-    #                 f"ramp_up_{g}"
-    #             )
-    #         m.addConstr(
-    #                 production[g] >= previous_production[g] - generation_units.get_ramp_down(g),
-    #                 f"ramp_down_{g}"
-    #             )
+# Ramp-up and ramp-down constraint
+for g in range(nbUnits):
 
-    # Battery constraints
-    m.addConstr(
-        state_of_charge == previous_SoC + (power_drawn*efficiency - power_injected/efficiency) * delta_t,
-        name=f"battery_SoC"
-    )
-    
-    # m.addConstr(
-    #     value_init - state_of_charge_last <= 0,
-    #     "battery_final_state_of_charge"
-    # )
-
-    # Node constraints
-    # Reference angle at bus 0 is equal to 0
-    m.addConstr(
-        voltage_angle[0] == 0,
-        name=f"reference_angle_bus_0"
-    ) 
-
-    for from_node in range(nbNode):
-        for to_node in nodes.get_to_node(from_node):
-            m.addConstrs(
-                - nodes.get_capacity(from_node, to_node) <= nodes.get_susceptance(from_node, to_node) * (voltage_angle[from_node] - voltage_angle[to_node]),
-                name=f"power_flow_upper_limit_from_{from_node}_to_{to_node}"
+    for t in range(nbHour):
+        
+        # Apply the special condition for t=0
+        if t == 0:  
+            pass
+        #     m.addConstr(
+        #         production[t, g] <= generation_units.get_prod_init(g) + generation_units.get_ramp_up(g),
+        #         name=f"ramp_up_{g}_time_{t}"
+        #     )
+        #     m.addConstr(
+        #         production[t, g] >= generation_units.get_prod_init(g) - generation_units.get_ramp_down(g),
+        #         name=f"ramp_down_{g}_time_{t}"
+        #     )
+        # Apply the regular ramp-down constraint for t>0
+        else:  
+            m.addConstr(
+                production[t, g] <= production[t - 1, g] + generation_units.get_ramp_up(g),
+                name=f"ramp_up_{g}_time_{t}"
+            )
+            m.addConstr(
+                production[t, g] >= production[t - 1, g] - generation_units.get_ramp_down(g),
+                name=f"ramp_down_{g}_time_{t}"
             )
 
-            m.addConstrs(
-                nodes.get_susceptance(from_node, to_node) * (voltage_angle[from_node] - voltage_angle[to_node]) <= nodes.get_capacity(from_node, to_node),
-                name=f"power_flow_lower_limit_from_{from_node}_to_{to_node}"
-            )
 
-    m.optimize()
+# Battery constraints
+m.addConstr(state_of_charge[0] == value_init - (power_injected[0]/efficiency  - power_drawn[0]*efficiency),name=f"SoC_0")
+for t in range(1,nbHour-1):
+    m.addConstr(
+        state_of_charge[t] == state_of_charge[t-1] + (power_drawn[t]*efficiency - power_injected[t]/efficiency )* delta_t,
+        name=f"SoC_{t}"
+    )    
+m.addConstr(value_init - state_of_charge[-1] <= 0, name=f"SoC_finale")
+m.addConstr(value_init - state_of_charge[-1] >= 0, name=f"SoC_finale")
 
-    return m
-
-SoC = init_SoC
+# Node constraints
+#Reference angle at bus 0 is equal to 0
 for t in range(nbHour):
-    print("-"*60)
-    print(f"\nHour {t}")
+    m.addConstr(voltage_angle[t, 0] == 0, name=f"angle_reference_at_time_{t}") 
 
-    if t > 0:
-        m = run_model(
-            t=t, 
-            previous_SoC=SoC,
-            previous_production=power_generation
-        ) 
-    else:
-        m = run_model(
-            t=t, 
-            previous_SoC=SoC,
-        ) 
-    
-    #print(m.display())
+for t in range(nbHour):
+    for n in range(nbNode):
+        for to_node in nodes.get_to_node(n):
+            m.addConstrs(
+                - nodes.get_capacity(n, to_node)
+                <= nodes.get_susceptance(n, to_node)
+                * (voltage_angle[t, n] - voltage_angle[t, to_node]),
+                name=f"power_flow_upper_limit_from_{n}_to_{to_node},at_time"
+            )
+            m.addConstrs(
+                nodes.get_susceptance(n, to_node)
+                * (voltage_angle[t, n] - voltage_angle[t, to_node])
+                <= nodes.get_capacity(n, to_node),
+                name=f"power_flow_upper_limit_from_{n}_to_{to_node},at_time"
+            )
 
-    SoC = m.getVarByName("state_of_charge[0]").X
-    power_generation = []
-    for node_id in range(nbNode):
+m.optimize()
 
-        constraint = m.getConstrByName(f"balancing_{node_id}[0]")
-        price = round(constraint.Pi,2)
+#print(m.display())
+print(m.status)
+print('--'*40)
+for node_id in range(nbNode):
 
-        #generation = round(m.getVarByName(f"power_generation[{node_id}]").X,2)
-        #power_generation.append(generation)
+    print(f'\nNode: {node_id}')
 
-        print(f"Node {node_id}: ${price} - MWh ")
+    node_price = []
+    node_generation = []
+    ids_load = nodes.get_ids_load(node_id)    
+    ids_generation = nodes.get_ids_generation(node_id)
+    for t in range(nbHour):
+
+        price = m.getConstrByName(f"balancing_{node_id}_at_time_{t}").Pi
+        price = round(price,2)
+        
+        #print(f"Node {node_id}: ${price} - MWh{generation}")
+        print(f"Node {node_id}: ${price}")
 
