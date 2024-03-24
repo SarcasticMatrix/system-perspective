@@ -182,6 +182,11 @@ node_ids_zone1 = [3, 14, 15, 16, 17, 18, 21, 22, 24]  # Id of the nodes in zone 
 node_ids_zone2 = [6, 8, 10, 12, 13, 19, 20, 23]  # Id of the nodes in zone 2
 node_ids_zone3 = [1, 2, 4, 5, 7, 8, 9, 11]  # Id of the nodes in zone 3
 
+# Python convention
+# node_ids_zone1 = [2, 13, 14, 15, 16, 17, 20, 21, 23]  # Id of the nodes in zone 1
+# node_ids_zone2 = [5, 7, 9, 11, 12, 18, 19, 22]  # Id of the nodes in zone 2
+# node_ids_zone3 = [0, 1, 3, 4, 6, 7, 8, 10]  # Id of the nodes in zone 3
+
 # zones_nodes = {'Z1': [1, 2, 3, 4, 5, 6, 7, 8, 24], 'Z2': [9, 10, 11, 12, 13, 14, 15], 'Z3': [16, 17, 18, 19, 20, 21, 22, 23]}
 
 zone1 = Zone()
@@ -338,7 +343,7 @@ print(len(balance_constraint))
 # Ramp-up and ramp-down constraint
 ramp_up_constraint = []
 ramp_down_constraint = []
-for zoneZ in zones:
+for zi, zoneZ in zip(range(len(zones)), zones):  # for each zones:
     for g in range(len(zoneZ.get_id_generators())):
         for t in range(nbHour):
             if t == 0:  # Apply the special condition for t=0
@@ -347,6 +352,7 @@ for zoneZ in zones:
                         production[t, g]
                         <= zoneZ.generation_units.units[g]["Initial production"]
                         + zoneZ.generation_units.units[g]["Ramp up"],
+                        name=f"ramp_up_ini_{t}_{g}",
                     )
                 )
                 ramp_down_constraint.append(
@@ -354,14 +360,17 @@ for zoneZ in zones:
                         production[t, g]
                         >= zoneZ.generation_units.units[g]["Initial production"]
                         - zoneZ.generation_units.units[g]["Ramp down"],
+                        name=f"ramp_down_ini_{t}_{g}_{zi}",
                     )
                 )
+                print(f"ramp_down_ini_{t}_{g}_{zi}",  zoneZ.generation_units.units[g]["Initial production"], zoneZ.generation_units.units[g]["Ramp down"])    
             else:  # Apply the regular ramp-down constraint for t>0
                 ramp_up_constraint.append(
                     m.addConstr(
                         production[t, g]
                         <= production[t - 1, g]
                         + zoneZ.generation_units.units[g]["Ramp up"],
+                        name=f"ramp_up_{t}_{g}",
                     )
                 )
                 ramp_down_constraint.append(
@@ -369,6 +378,7 @@ for zoneZ in zones:
                         production[t, g]
                         >= production[t - 1, g]
                         - zoneZ.generation_units.units[g]["Ramp down"],
+                        name=f"ramp_dwon_{t}_{g}",
                     )
                 )
 
@@ -401,6 +411,18 @@ m.optimize()
 ################################################################################
 # Results
 ################################################################################
+
+if m.status != GRB.OPTIMAL:
+    m.computeIIS()
+    print("IIS is not feasible")
+    # Print out the IIS constraints and variables
+    print('\nThe following constraints and variables are in the IIS:')
+    for c in m.getConstrs():
+        if c.IISConstr: print(f'\t{c.constrname}: {m.getRow(c)} {c.Sense} {c.RHS}')
+
+    for v in m.getVars():
+        if v.IISLB: print(f'\t{v.varname} ≥ {v.LB}')
+        if v.IISUB: print(f'\t{v.varname} ≤ {v.UB}')
 
 for zone_id in range(len(zones)):
 
