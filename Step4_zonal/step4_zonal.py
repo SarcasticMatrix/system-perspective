@@ -4,15 +4,23 @@ import numpy as np
 from gurobipy import GRB
 
 ################################################################################
+# Initialisaiton of nodes
+################################################################################
+from scripts.nodes import Nodes
+
+nbNode = 24
+all_nodes = Nodes(number_nodes=nbNode)
+
+################################################################################
 # Creation of Conventionnal Generation Units
 ################################################################################
 
-from scripts.generationUnits import GenerationUnits
+from scripts.generationUnits import GenerationUnits,GenerationUnit
 
 # parameter unit
 generationUnits_parameters = pd.read_csv("inputs/gen_parameters.csv", sep=";")
 
-nodes = generationUnits_parameters["Node"].values
+nodes_ids = generationUnits_parameters["Node"].values - 1
 costs = generationUnits_parameters["Ci"].values
 pmax = generationUnits_parameters["Pmax"].values
 pmin = generationUnits_parameters["Pmin"].values
@@ -29,9 +37,10 @@ prod_init = generationUnits_parameters["Pini"].values  # Initial production
 generation_units = GenerationUnits()
 nbUnitsConventionnal = generationUnits_parameters.shape[0]
 for unit_id in range(nbUnitsConventionnal):
-    generation_units.add_unit(
+    node_id = nodes_ids[unit_id]
+    generationUnit = GenerationUnit(
         unit_id=unit_id,
-        node_id=nodes[unit_id],
+        node_id=nodes_ids[unit_id],
         unit_type="conventionnal",
         cost=costs[unit_id],
         pmax=pmax[unit_id],
@@ -41,13 +50,16 @@ for unit_id in range(nbUnitsConventionnal):
         ramp_down=ramp_down[unit_id],
         prod_init=prod_init[unit_id],
     )
+    all_nodes.add_generationUnit(id_node=node_id,generationUnit=generationUnit)
+    generation_units.add_unit(generationUnit)
+
 
 ################################################################################
 # Adding of the Wind Generation Units
 ################################################################################
 
 wind_parameters = pd.read_csv("inputs/wind_parameters.csv", index_col="Unit", sep=";")
-nodes = wind_parameters["Node"].values
+nodes_ids = wind_parameters["Node"].values-1
 pmax = wind_parameters["Pmax"].values
 pmin = wind_parameters["Pmin"].values
 costs = wind_parameters["Ci"].values
@@ -62,9 +74,10 @@ for unit_id in range(nbUnitsWind):
         scenario
     ].values.tolist()
 
-    generation_units.add_unit(
+    node_id = nodes_ids[unit_id]
+    generationUnit = GenerationUnit(
         unit_id=unit_id + nbUnitsConventionnal,
-        node_id=nodes[unit_id],
+        node_id=nodes_ids[unit_id],
         unit_type="wind_turbine",
         cost=costs[unit_id],
         pmax=pmax[unit_id],
@@ -74,14 +87,17 @@ for unit_id in range(nbUnitsWind):
         ramp_down=0,
         prod_init=0,
     )
+    all_nodes.add_generationUnit(id_node=node_id,generationUnit=generationUnit)
+    generation_units.add_unit(generationUnit)
 
+    
 generation_units.export_to_json()
 
 ################################################################################
 # Creation of Loads Units
 ################################################################################
 
-from scripts.loadUnits import LoadUnits
+from scripts.loadUnits import LoadUnits, LoadUnit
 
 # parameter load
 total_needed_demand = pd.read_csv("inputs/load_profile.csv", sep=";")[
@@ -92,52 +108,33 @@ nbHour = total_needed_demand.shape[0]
 load_location = pd.read_csv(
     "inputs/load_location.csv", index_col="load_number", sep=";"
 )
-nodes = load_location["node"].values
+nodes_ids = load_location["node"].values - 1
 load_percentage = load_location["load_percentage"].values
 
 load_units = LoadUnits()
 nbLoadUnits = load_location.shape[0]
 for unit_id in range(nbLoadUnits):
-    load_units.add_unit(
-        load_id=unit_id,
-        node_id=nodes[unit_id],
+
+    node_id = nodes_ids[unit_id]
+    loadUnit = LoadUnit(
+        unit_id=unit_id,
+        node_id=node_id,
         bid_price=50,
         load_percentage=load_percentage[unit_id],
         total_needed_demand=total_needed_demand,
     )
-
-load_units.export_to_json()
+    all_nodes.add_loadUnit(id_node=node_id,loadUnit=loadUnit)
+    load_units.add_unit(loadUnit)
 
 ################################################################################
 # Create the Nodes
 ################################################################################
 
-from scripts.nodes import Nodes
-from scripts.transmissionLine import TransmissionLine
+from scripts.transmissionLines import TransmissionLine
 
-nodes = Nodes()
-nbNode = 24
-
-for id_node in range(1, nbNode + 1):
-
+for id_node in range(nbNode):
     print("-" * 40)
     print(f"Work on node: {id_node}")
-
-    # We add the generation unit which are located at the node
-    node_generation_units = GenerationUnits()
-    print(" Generation units:")
-    for unit in generation_units.units:
-        if unit["Id node"] == id_node:
-            print(f'  - a generation unit is added {unit["Id"]}')
-            node_generation_units.add_constructed_unit(unit)
-
-    # We add the load unit which are at located at the node
-    node_load_units = LoadUnits()
-    print(" Load units:")
-    for unit in load_units.units:
-        if unit["Id node"] == id_node:
-            print(f'  - a load unit is added: {unit["Id"]}')
-            node_load_units.add_constructed_unit(unit)
 
     # We add the transmission line
     print(" Transmission lines:")
@@ -165,45 +162,39 @@ for id_node in range(1, nbNode + 1):
 
         print(f"  - a transmission line with node {to_node} is added")
 
-    nodes.add_node(
-        id=id_node,
-        generationUnits=node_generation_units,
-        loadUnits=node_load_units,
-        transmissionLines=transmission_lines,
-    )
-
+    all_nodes.add_transmissionLine(id_node=node_id,transmissionLine=transmission_lines)
 ################################################################################
 # Create the Zones
 ################################################################################
 
 from scripts.zone import Zone
 
-node_ids_zone1 = [3, 14, 15, 16, 17, 18, 21, 22, 24]  # Id of the nodes in zone 1
-node_ids_zone2 = [6, 8, 10, 12, 13, 19, 20, 23]  # Id of the nodes in zone 2
-node_ids_zone3 = [1, 2, 4, 5, 7, 8, 9, 11]  # Id of the nodes in zone 3
+# node_ids_zone1 = [3, 14, 15, 16, 17, 18, 21, 22, 24]  # Id of the nodes in zone 1
+# node_ids_zone2 = [6, 8, 10, 12, 13, 19, 20, 23]  # Id of the nodes in zone 2
+# node_ids_zone3 = [1, 2, 4, 5, 7, 8, 9, 11]  # Id of the nodes in zone 3
 
 # Python convention
-# node_ids_zone1 = [2, 13, 14, 15, 16, 17, 20, 21, 23]  # Id of the nodes in zone 1
-# node_ids_zone2 = [5, 7, 9, 11, 12, 18, 19, 22]  # Id of the nodes in zone 2
-# node_ids_zone3 = [0, 1, 3, 4, 6, 7, 8, 10]  # Id of the nodes in zone 3
+node_ids_zone1 = [2, 13, 14, 15, 16, 17, 20, 21, 23]  # Id of the nodes in zone 1
+node_ids_zone2 = [5, 7, 9, 11, 12, 18, 19, 22]  # Id of the nodes in zone 2
+node_ids_zone3 = [0, 1, 3, 4, 6, 7, 8, 10]  # Id of the nodes in zone 3
 
 # zones_nodes = {'Z1': [1, 2, 3, 4, 5, 6, 7, 8, 24], 'Z2': [9, 10, 11, 12, 13, 14, 15], 'Z3': [16, 17, 18, 19, 20, 21, 22, 23]}
 
-zone1 = Zone()
-zone2 = Zone()
-zone3 = Zone()
+zone1 = Zone(len(node_ids_zone1))
+zone2 = Zone(len(node_ids_zone2))
+zone3 = Zone(len(node_ids_zone3))
 
-for node in nodes.nodes:
+for node in all_nodes.nodes:
 
-    if node["Id"] in node_ids_zone1:
+    if node.id_node in node_ids_zone1:
         zone1.add_constructed_node(node)
-        print(f"Add node {node['Id']} in zone 1")
-    elif node["Id"] in node_ids_zone2:
+        print(f"Add node {node.id_node} in zone 1")
+    elif node.id_node in node_ids_zone2:
         zone2.add_constructed_node(node)
-        print(f"Add node {node['Id']} in zone 2")
-    elif node["Id"] in node_ids_zone3:
+        print(f"Add node {node.id_node} in zone 2")
+    elif node.id_node in node_ids_zone3:
         zone3.add_constructed_node(node)
-        print(f"Add node {node['Id']} in zone 3")
+        print(f"Add node {node.id_node} in zone 3")
     else:
         print("Is not in a zone ?")
 

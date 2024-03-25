@@ -23,7 +23,7 @@ def plot_results(nbUnits: int, results: pd.DataFrame):
     )
     axs[0].axhline(y=0, linestyle="--", linewidth=0.5, color="gray")
     axs[0].axhline(y=1, linestyle="--", linewidth=0.5, color="gray")
-    axs[0].set_ylabel("%")
+    axs[0].set_ylabel("Normalised SoC")
 
     axs[0].legend(loc="upper left")
     axs[0].xaxis.grid(which="minor", linestyle="--", linewidth=0.1, color="gray")

@@ -1,11 +1,11 @@
 {
     "Generation unit 0": {
-        "Id": 0,
-        "Id node": 1,
-        "Type": "conventionnal",
+        "Unit id": 0,
+        "Node id": 0,
+        "Unit type": "conventionnal",
         "Cost": 13.32,
-        "PMAX": 152,
-        "PMIN": 30.4,
+        "Pmax": 152,
+        "Pmin": 30.4,
         "Availability": [
             1,
             1,
@@ -34,15 +34,15 @@
         ],
         "Ramp up": 120,
         "Ramp down": 120,
-        "Initial production": 76
+        "Prod init": 76
     },
     "Generation unit 1": {
-        "Id": 1,
-        "Id node": 2,
-        "Type": "conventionnal",
+        "Unit id": 1,
+        "Node id": 1,
+        "Unit type": "conventionnal",
         "Cost": 13.32,
-        "PMAX": 152,
-        "PMIN": 30.4,
+        "Pmax": 152,
+        "Pmin": 30.4,
         "Availability": [
             1,
             1,
@@ -71,15 +71,15 @@
         ],
         "Ramp up": 120,
         "Ramp down": 120,
-        "Initial production": 76
+        "Prod init": 76
     },
     "Generation unit 2": {
-        "Id": 2,
-        "Id node": 7,
-        "Type": "conventionnal",
+        "Unit id": 2,
+        "Node id": 6,
+        "Unit type": "conventionnal",
         "Cost": 20.7,
-        "PMAX": 350,
-        "PMIN": 75.0,
+        "Pmax": 350,
+        "Pmin": 75.0,
         "Availability": [
             1,
             1,
@@ -108,15 +108,15 @@
         ],
         "Ramp up": 350,
         "Ramp down": 350,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 3": {
-        "Id": 3,
-        "Id node": 13,
-        "Type": "conventionnal",
+        "Unit id": 3,
+        "Node id": 12,
+        "Unit type": "conventionnal",
         "Cost": 20.93,
-        "PMAX": 591,
-        "PMIN": 206.85,
+        "Pmax": 591,
+        "Pmin": 206.85,
         "Availability": [
             1,
             1,
@@ -145,15 +145,15 @@
         ],
         "Ramp up": 240,
         "Ramp down": 240,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 4": {
-        "Id": 4,
-        "Id node": 15,
-        "Type": "conventionnal",
+        "Unit id": 4,
+        "Node id": 14,
+        "Unit type": "conventionnal",
         "Cost": 26.11,
-        "PMAX": 60,
-        "PMIN": 12.0,
+        "Pmax": 60,
+        "Pmin": 12.0,
         "Availability": [
             1,
             1,
@@ -182,15 +182,15 @@
         ],
         "Ramp up": 60,
         "Ramp down": 60,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 5": {
-        "Id": 5,
-        "Id node": 15,
-        "Type": "conventionnal",
+        "Unit id": 5,
+        "Node id": 14,
+        "Unit type": "conventionnal",
         "Cost": 10.52,
-        "PMAX": 155,
-        "PMIN": 54.25,
+        "Pmax": 155,
+        "Pmin": 54.25,
         "Availability": [
             1,
             1,
@@ -219,15 +219,15 @@
         ],
         "Ramp up": 155,
         "Ramp down": 155,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 6": {
-        "Id": 6,
-        "Id node": 16,
-        "Type": "conventionnal",
+        "Unit id": 6,
+        "Node id": 15,
+        "Unit type": "conventionnal",
         "Cost": 10.52,
-        "PMAX": 155,
-        "PMIN": 54.25,
+        "Pmax": 155,
+        "Pmin": 54.25,
         "Availability": [
             1,
             1,
@@ -256,15 +256,15 @@
         ],
         "Ramp up": 155,
         "Ramp down": 155,
-        "Initial production": 124
+        "Prod init": 124
     },
     "Generation unit 7": {
-        "Id": 7,
-        "Id node": 18,
-        "Type": "conventionnal",
+        "Unit id": 7,
+        "Node id": 17,
+        "Unit type": "conventionnal",
         "Cost": 6.02,
-        "PMAX": 400,
-        "PMIN": 100.0,
+        "Pmax": 400,
+        "Pmin": 100.0,
         "Availability": [
             1,
             1,
@@ -293,15 +293,15 @@
         ],
         "Ramp up": 280,
         "Ramp down": 280,
-        "Initial production": 240
+        "Prod init": 240
     },
     "Generation unit 8": {
-        "Id": 8,
-        "Id node": 21,
-        "Type": "conventionnal",
+        "Unit id": 8,
+        "Node id": 20,
+        "Unit type": "conventionnal",
         "Cost": 5.47,
-        "PMAX": 400,
-        "PMIN": 100.0,
+        "Pmax": 400,
+        "Pmin": 100.0,
         "Availability": [
             1,
             1,
@@ -330,15 +330,15 @@
         ],
         "Ramp up": 280,
         "Ramp down": 280,
-        "Initial production": 240
+        "Prod init": 240
     },
     "Generation unit 9": {
-        "Id": 9,
-        "Id node": 22,
-        "Type": "conventionnal",
+        "Unit id": 9,
+        "Node id": 21,
+        "Unit type": "conventionnal",
         "Cost": 0.0,
-        "PMAX": 300,
-        "PMIN": 300.0,
+        "Pmax": 300,
+        "Pmin": 300.0,
         "Availability": [
             1,
             1,
@@ -367,15 +367,15 @@
         ],
         "Ramp up": 300,
         "Ramp down": 300,
-        "Initial production": 240
+        "Prod init": 240
     },
     "Generation unit 10": {
-        "Id": 10,
-        "Id node": 23,
-        "Type": "conventionnal",
+        "Unit id": 10,
+        "Node id": 22,
+        "Unit type": "conventionnal",
         "Cost": 10.52,
-        "PMAX": 310,
-        "PMIN": 108.5,
+        "Pmax": 310,
+        "Pmin": 108.5,
         "Availability": [
             1,
             1,
@@ -404,15 +404,15 @@
         ],
         "Ramp up": 180,
         "Ramp down": 180,
-        "Initial production": 248
+        "Prod init": 248
     },
     "Generation unit 11": {
-        "Id": 11,
-        "Id node": 23,
-        "Type": "conventionnal",
+        "Unit id": 11,
+        "Node id": 22,
+        "Unit type": "conventionnal",
         "Cost": 10.89,
-        "PMAX": 350,
-        "PMIN": 140.0,
+        "Pmax": 350,
+        "Pmin": 140.0,
         "Availability": [
             1,
             1,
@@ -441,15 +441,15 @@
         ],
         "Ramp up": 240,
         "Ramp down": 240,
-        "Initial production": 280
+        "Prod init": 280
     },
     "Generation unit 12": {
-        "Id": 12,
-        "Id node": 3,
-        "Type": "wind_turbine",
+        "Unit id": 12,
+        "Node id": 2,
+        "Unit type": "wind_turbine",
         "Cost": 0,
-        "PMAX": 200,
-        "PMIN": 0,
+        "Pmax": 200,
+        "Pmin": 0,
         "Availability": [
             0.407917442570317,
             0.566083167990572,
@@ -478,15 +478,15 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 13": {
-        "Id": 13,
-        "Id node": 5,
-        "Type": "wind_turbine",
+        "Unit id": 13,
+        "Node id": 4,
+        "Unit type": "wind_turbine",
         "Cost": 0,
-        "PMAX": 200,
-        "PMIN": 0,
+        "Pmax": 200,
+        "Pmin": 0,
         "Availability": [
             0.384460432271812,
             0.334138265321714,
@@ -515,15 +515,15 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 14": {
-        "Id": 14,
-        "Id node": 7,
-        "Type": "wind_turbine",
+        "Unit id": 14,
+        "Node id": 6,
+        "Unit type": "wind_turbine",
         "Cost": 0,
-        "PMAX": 200,
-        "PMIN": 0,
+        "Pmax": 200,
+        "Pmin": 0,
         "Availability": [
             0.563373256644606,
             0.556427015328695,
@@ -552,15 +552,15 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 15": {
-        "Id": 15,
-        "Id node": 16,
-        "Type": "wind_turbine",
+        "Unit id": 15,
+        "Node id": 15,
+        "Unit type": "wind_turbine",
         "Cost": 0,
-        "PMAX": 200,
-        "PMIN": 0,
+        "Pmax": 200,
+        "Pmin": 0,
         "Availability": [
             0.362613676602771,
             0.527927185676463,
@@ -589,15 +589,15 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 16": {
-        "Id": 16,
-        "Id node": 21,
-        "Type": "wind_turbine",
+        "Unit id": 16,
+        "Node id": 20,
+        "Unit type": "wind_turbine",
         "Cost": 0,
-        "PMAX": 200,
-        "PMIN": 0,
+        "Pmax": 200,
+        "Pmin": 0,
         "Availability": [
             0.202066448972254,
             0.314265934553748,
@@ -626,15 +626,15 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Prod init": 0
     },
     "Generation unit 17": {
-        "Id": 17,
-        "Id node": 23,
-        "Type": "wind_turbine",
+        "Unit id": 17,
+        "Node id": 22,
+        "Unit type": "wind_turbine",
         "Cost": 0,
-        "PMAX": 200,
-        "PMIN": 0,
+        "Pmax": 200,
+        "Pmin": 0,
         "Availability": [
             0.558261479148825,
             0.548836965185577,
@@ -663,6 +663,6 @@
         ],
         "Ramp up": 10000,
         "Ramp down": 0,
-        "Initial production": 0
+        "Prod init": 0
     }
 }

@@ -13,13 +13,13 @@ class Zone:
         - load_units (LoadUnits), LoadUnits which are linked to the zone
     """
 
-    def __init__(self):
-        self.nodes = Nodes()
+    def __init__(self, number_nodes: int):
+        self.nodes = Nodes(number_nodes)
         self.transmission_lines = []
         self.generation_units = GenerationUnits()
         self.load_units = LoadUnits()
 
-    def add_constructed_node(self, node: dict):
+    def add_constructed_node(self, node: Nodes):
         """
         Add a node which already exists
         """

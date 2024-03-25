@@ -1,20 +1,11 @@
 import numpy as np
 import json
 
+class LoadUnit:
 
-class LoadUnits:
-    def __init__(self):
-        """
-        Initializes the LoadUnits class.
-
-        Attributes:
-            units (list): A list to store information about each load unit.
-        """
-        self.units = []
-
-    def add_unit(
+    def __init__(
         self,
-        load_id: int,
+        unit_id: int,
         node_id: int,
         bid_price: float,
         load_percentage: float,
@@ -24,7 +15,7 @@ class LoadUnits:
         Adds a new load unit to the units list.
 
         Parameters:
-            load_id (int): The unique identifier for the load unit.
+            unit_id (int): The unique identifier for the load unit.
             node_id (int): The identifier of the node where the load unit is located.
             bid_price (float): The bid price for the load unit.
             load_percentage (float): The percentage of the load unit's capacity that is being utilized.
@@ -32,49 +23,44 @@ class LoadUnits:
 
         Each load unit is represented as a dictionary with keys corresponding to its attributes (Id, Id node, Bid price, Load percentage, and Needed demand) and their respective values.
         """
-        load = {
-            "Id": load_id,
-            "Id node": node_id,
-            "Bid price": bid_price,
-            "Load percentage": load_percentage,
-            "Needed demand": total_needed_demand * load_percentage / 100,
-        }
+        
+        self.unit_id = unit_id
+        self.node_id = node_id
+        self.bid_price = bid_price
+        self.load_percentage = load_percentage
+        self.total_needed_demand = total_needed_demand * load_percentage / 100
 
-        self.units.append(load)
 
-    def add_constructed_unit(self, unit: dict):
-        """
-        Adds a load unit that has already been defined elsewhere to the units list.
-
-        Parameters:
-            unit (dict): A dictionary representing a load unit with all necessary attributes (as defined in `add_unit` method).
-        """
+class LoadUnits:
+    def __init__(self):
+        self.units = []
+    
+    def add_unit(self, unit:LoadUnit):
         self.units.append(unit)
 
     def export_to_json(self):
-        """
-        Exports the load units data to a JSON file for further analysis or visualization.
-
-        The method serializes the list of load units into a JSON format and writes it to a file named "data_loadUnits.json" within the "Step2" directory.
-        """
-        print("Export load units data in a json file ...")
-
-        nbr_units = len(self.units)
-
-        # Creating a dictionary where each key is a unique identifier for a load unit and its value is the unit's data.
-        dictionary = {f"Generation unit {j}": self.units[j] for j in range(nbr_units)}
-        # Serializing the dictionary into JSON format, converting numpy arrays to lists where necessary.
+        dictionary = {f"Load unit {unit.unit_id}": unit.transform_to_dict() for unit in self.units}
         json_object = json.dumps(dictionary, default=lambda x: x.tolist(), indent=4)
         with open("Step2/data_loadUnits.json", "w") as outfile:
             outfile.write(json_object)
 
-        print("Export is done ...")
-
     def get_ids(self):
-        """
-        Retrieves the unique identifiers (Ids) of all load units stored in the units list.
+        return [unit.unit_id for unit in self.units]
 
-        Returns:
-            A list of integers representing the Ids of all load units.
-        """
-        return [unit["Id"] for unit in self.units]
+    def get_unit(self, unit_id:int):
+        for unit in self.units:
+            if unit.unit_id == unit_id:
+                return unit
+        print('No load found in LoadUnits.get_unit()')
+
+    def get_bid_price(self, unit_id):
+        unit = self.get_unit(unit_id=unit_id)
+        return unit.bid_price
+
+    def get_total_needed_demand(self, unit_id):
+        unit = self.get_unit(unit_id=unit_id)
+        return unit.total_needed_demand
+    
+
+    
+
