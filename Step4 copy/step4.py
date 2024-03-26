@@ -278,6 +278,7 @@ m.optimize()
 #print(m.display())
 print(m.status)
 print('--'*40)
+y=[]
 for node_id in range(nbNode):
 
     print(f'\nNode: {node_id}')
@@ -293,4 +294,16 @@ for node_id in range(nbNode):
         
         #print(f"Node {node_id}: ${price} - MWh{generation}")
         print(f"Node {node_id}: ${price}")
+
+        if node_id == 19:
+            y.append(price)
+
+import matplotlib.pyplot as plt 
+plt.figure()
+plt.plot([i for i in range(24)],y,label='Clearing price')
+plt.legend()
+plt.xlabel('Hours')
+plt.ylabel('c.u.')
+plt.title("Day-Ahead clearing price at node 20")
+plt.show()
 

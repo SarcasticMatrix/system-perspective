@@ -26,12 +26,15 @@ class Node:
     
     def get_to_node(self):
         return [transmissionLine.to_node for transmissionLine in self.transmissionLines.transmissionLines]
+    
+    def get_id(self):
+        return self.id_node
         
 class Nodes:
     
-    def __init__(self, number_nodes:int):
+    def __init__(self, list_ids:list):
         self.nodes = []
-        for id in range(number_nodes):
+        for id in list_ids:
             node = Node(
                 id,
                 GenerationUnits(),
@@ -42,6 +45,9 @@ class Nodes:
 
     def add_node(self,node:Node):
         self.nodes.append(node)
+    
+    def get_ids_node(self):
+        return [node.id_node for node in self.nodes]
     
     def get_node(self, id_node:int):
         for node in self.nodes:
@@ -86,82 +92,3 @@ class Nodes:
         node = self.get_node(id_node)
         return node.get_to_node()
 
-
-    # def get_ids_load(self, id_node):
-    #     """
-    #     Returns the IDs of all load units located at the specified node.
-
-    #     Parameters:
-    #         id_node (int): The ID of the node whose load units are being queried.
-
-    #     Returns:
-    #         list of int: The IDs of all load units located at the specified node.
-    #     """
-    #     for node in self.nodes:
-    #         if node["Id"] == id_node:
-    #             return node["Load units"].get_ids()
-
-    # def get_ids_generation(self, id_node):
-    #     """
-    #     Returns the IDs of all generation units located at the specified node.
-
-    #     Parameters:
-    #         id_node (int): The ID of the node whose generation units are being queried.
-
-    #     Returns:
-    #         list of int: The IDs of all generation units located at the specified node.
-    #     """
-    #     for node in self.nodes:
-    #         if node["Id"] == id_node:
-    #             return node["Generation units"].get_ids()
-
-    # def get_susceptances(self, id_node, to_node):
-    #     """
-    #     Returns the susceptance of the transmission line between two specified nodes.
-
-    #     Parameters:
-    #         id_node (int): The ID of the originating node.
-    #         to_node (int): The ID of the destination node.
-
-    #     Returns:
-    #         float: The susceptance of the transmission line between the two nodes.
-    #     """
-    #     for node in self.nodes:
-    #         if node["Id"] == id_node:
-    #             for transmissionLine in node["Transmission line"]:
-    #                 if transmissionLine.to_node == to_node:
-    #                     return transmissionLine.susceptance
-
-    # def get_capacity(self, id_node, to_node):
-    #     """
-    #     Returns the capacity of the transmission line between two specified nodes.
-
-    #     Parameters:
-    #         id_node (int): The ID of the originating node.
-    #         to_node (int): The ID of the destination node.
-
-    #     Returns:
-    #         float: The capacity of the transmission line between the two nodes.
-    #     """
-    #     for node in self.nodes:
-    #         if node["Id"] == id_node:
-    #             for transmissionLine in node["Transmission line"]:
-    #                 if transmissionLine.to_node == to_node:
-    #                     return transmissionLine.capacity
-
-    # def get_to_node(self, id_node):
-    #     """
-    #     Returns a list of IDs for all nodes that are directly connected to the specified node by a transmission line.
-
-    #     Parameters:
-    #         id_node (int): The ID of the node whose neighboring nodes are being queried.
-
-    #     Returns:
-    #         list of int: The IDs of all nodes directly connected to the specified node.
-    #     """
-    #     for node in self.nodes:
-    #         if node["Id"] == id_node:
-    #             return [
-    #                 transmission_line.to_node
-    #                 for transmission_line in node["Transmission line"]
-    #             ]

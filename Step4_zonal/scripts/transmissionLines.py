@@ -21,7 +21,7 @@ class TransmissionLines:
             if transmissionLine.from_node == from_node:
                 if transmissionLine.to_node == to_node:
                     return transmissionLine
-        print('No TransmissionLine found in TransmissionLines.get_transmissionLine()')
+        #print('No TransmissionLine found in TransmissionLines.get_transmissionLine()')
     
 
         
